@@ -4,7 +4,7 @@ FROM ${JELLYFIN_BASE_IMAGE}
 ARG JELLYFIN_VERSION=12.0
 ARG JELLYFIN_BASE_IMAGE
 LABEL org.opencontainers.image.source="https://github.com/aaemon/custom-jellyfin-v12"
-LABEL org.opencontainers.image.description="Jellyfin v12 with libraries in the navbar overflow menu"
+LABEL org.opencontainers.image.description="Bijoy Media Jellyfin v12 with libraries in the navbar overflow menu"
 LABEL io.raspicloud.custom-navbar.base-image="${JELLYFIN_BASE_IMAGE}"
 LABEL io.raspicloud.custom-navbar.version="${JELLYFIN_VERSION}"
 
@@ -32,7 +32,7 @@ RUN set -eu; \
     chunk_id=${old_name%%.*}; \
     old_hash=${old_name#*.}; \
     old_hash=${old_hash%.chunk.js}; \
-    new_hash=customnavbar00000000; \
+    new_hash=customnavbarbijoy1; \
     new_name="${chunk_id}.${new_hash}.chunk.js"; \
     old_nav='N=(0,a.useMemo)((function(){return j.length>b+1?j.slice(0,b):j}),[b,j]),R=(0,a.useMemo)((function(){return j.slice((null==N?void 0:N.length)||0)}),[N,j])'; \
     new_nav='N=(0,a.useMemo)((function(){return f||[]}),[f]),R=(0,a.useMemo)((function(){return(null==x?void 0:x.Items)||[]}),[x])'; \
@@ -46,6 +46,18 @@ RUN set -eu; \
     OLD="$old_label" NEW="$new_label" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$navbar_bundle"; \
     test "$(grep -oF "$old_label" "$navbar_bundle" | wc -l)" -eq 0; \
     grep -qF "$new_label" "$navbar_bundle"; \
+    server_fallback='children:n?"":(null==t?void 0:t.ServerName)||"Jellyfin"'; \
+    server_brand='children:n?"":(null==t?void 0:t.ServerName)||"Bijoy Media"'; \
+    drawer_fallback='primary:(null==e?void 0:e.ServerName)||"Jellyfin"'; \
+    drawer_brand='primary:(null==e?void 0:e.ServerName)||"Bijoy Media"'; \
+    test "$(grep -oF "$server_fallback" "$navbar_bundle" | wc -l)" -eq 1; \
+    test "$(grep -oF "$drawer_fallback" "$navbar_bundle" | wc -l)" -eq 1; \
+    OLD="$server_fallback" NEW="$server_brand" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$navbar_bundle"; \
+    OLD="$drawer_fallback" NEW="$drawer_brand" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$navbar_bundle"; \
+    test "$(grep -oF "$server_fallback" "$navbar_bundle" | wc -l)" -eq 0; \
+    test "$(grep -oF "$drawer_fallback" "$navbar_bundle" | wc -l)" -eq 0; \
+    grep -qF "$server_brand" "$navbar_bundle"; \
+    grep -qF "$drawer_brand" "$navbar_bundle"; \
     runtime="$web_root/runtime.bundle.js"; \
     old_runtime_entry="${chunk_id}:\"$old_hash\""; \
     new_runtime_entry="${chunk_id}:\"$new_hash\""; \
@@ -59,5 +71,5 @@ RUN set -eu; \
     sed -i -E 's/main\.jellyfin\.bundle\.js\?[^" ]+/main.jellyfin.bundle.js?custom-backdrops1/g' "$web_root/index.html"; \
     grep -qF 'main.jellyfin.bundle.js?custom-backdrops1' "$web_root/index.html"; \
     test "$(grep -oE 'runtime\.bundle\.js\?[^" ]+' "$web_root/index.html" | wc -l)" -ge 1; \
-    sed -i -E 's/runtime\.bundle\.js\?[^" ]+/runtime.bundle.js?custom-navbar1/g' "$web_root/index.html"; \
-    grep -qF 'runtime.bundle.js?custom-navbar1' "$web_root/index.html"
+    sed -i -E 's/runtime\.bundle\.js\?[^" ]+/runtime.bundle.js?custom-navbar2/g' "$web_root/index.html"; \
+    grep -qF 'runtime.bundle.js?custom-navbar2' "$web_root/index.html"

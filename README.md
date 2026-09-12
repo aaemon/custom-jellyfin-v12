@@ -9,6 +9,7 @@ Included navbar change:
 - All Jellyfin libraries are placed in the existing overflow menu.
 - The overflow menu is labelled `Libraries`.
 - Library backdrops are enabled by default.
+- The public login toolbar and signed-in drawer use `Bijoy Media` as the fallback server name.
 
 The underlying image retains only the passwordless auto-login and its required
 startup synchronization.
