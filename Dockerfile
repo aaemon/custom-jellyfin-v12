@@ -1,9 +1,9 @@
-ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/cusom-jellyfin-v12:12.0
+ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:12.0
 FROM ${JELLYFIN_BASE_IMAGE}
 
 ARG JELLYFIN_VERSION=12.0
 ARG JELLYFIN_BASE_IMAGE
-LABEL org.opencontainers.image.source="https://github.com/aaemon/custom_navbar"
+LABEL org.opencontainers.image.source="https://github.com/aaemon/custom-jellyfin-v12"
 LABEL org.opencontainers.image.description="Jellyfin v12 with libraries in the navbar overflow menu"
 LABEL io.raspicloud.custom-navbar.base-image="${JELLYFIN_BASE_IMAGE}"
 LABEL io.raspicloud.custom-navbar.version="${JELLYFIN_VERSION}"

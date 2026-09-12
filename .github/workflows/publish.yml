@@ -13,7 +13,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: publish-custom-navbar
+  group: publish-custom-jellyfin-v12
   cancel-in-progress: false
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          base_image="ghcr.io/aaemon/cusom-jellyfin-v12:${{ steps.upstream.outputs.version }}"
+          base_image="ghcr.io/aaemon/loginfix-jellyfin-v12:${{ steps.upstream.outputs.version }}"
           manifest=$(docker buildx imagetools inspect --raw "$base_image" 2>/dev/null || true)
           if [[ -n "$manifest" ]] && jq -e '
             [ .manifests[]? | .platform? // empty
@@ -64,6 +64,10 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          if [[ "$GITHUB_EVENT_NAME" != "schedule" ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           image="ghcr.io/${{ github.repository }}:${{ steps.upstream.outputs.version }}"
           manifest=$(docker buildx imagetools inspect --raw "$image" 2>/dev/null || true)
           if [[ -n "$manifest" ]] && jq -e '
@@ -90,7 +94,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             JELLYFIN_VERSION=${{ steps.upstream.outputs.version }}
-            JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/cusom-jellyfin-v12:${{ steps.upstream.outputs.version }}
+            JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:${{ steps.upstream.outputs.version }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.upstream.outputs.version }}
             ghcr.io/${{ github.repository }}:latest
