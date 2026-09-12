@@ -12,6 +12,14 @@ USER root
 
 RUN set -eu; \
     web_root=/jellyfin/jellyfin-web; \
+    backdrop_bundle="$web_root/main.jellyfin.bundle.js"; \
+    test -f "$backdrop_bundle"; \
+    old_backdrops='this.get("enableBackdrops",!1),!1'; \
+    new_backdrops='this.get("enableBackdrops",!1),!0'; \
+    test "$(grep -oF "$old_backdrops" "$backdrop_bundle" | wc -l)" -eq 1; \
+    OLD="$old_backdrops" NEW="$new_backdrops" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$backdrop_bundle"; \
+    test "$(grep -oF "$old_backdrops" "$backdrop_bundle" | wc -l)" -eq 0; \
+    grep -qF "$new_backdrops" "$backdrop_bundle"; \
     navbar_bundle=; \
     for candidate in "$web_root"/*.chunk.js; do \
         if grep -qF 'user-view-overflow-menu' "$candidate"; then \
@@ -47,6 +55,9 @@ RUN set -eu; \
     grep -qF "$new_runtime_entry" "$runtime"; \
     mv "$navbar_bundle" "$web_root/$new_name"; \
     test -f "$web_root/$new_name"; \
+    test "$(grep -oE 'main\.jellyfin\.bundle\.js\?[^" ]+' "$web_root/index.html" | wc -l)" -ge 1; \
+    sed -i -E 's/main\.jellyfin\.bundle\.js\?[^" ]+/main.jellyfin.bundle.js?custom-backdrops1/g' "$web_root/index.html"; \
+    grep -qF 'main.jellyfin.bundle.js?custom-backdrops1' "$web_root/index.html"; \
     test "$(grep -oE 'runtime\.bundle\.js\?[^" ]+' "$web_root/index.html" | wc -l)" -ge 1; \
     sed -i -E 's/runtime\.bundle\.js\?[^" ]+/runtime.bundle.js?custom-navbar1/g' "$web_root/index.html"; \
     grep -qF 'runtime.bundle.js?custom-navbar1' "$web_root/index.html"

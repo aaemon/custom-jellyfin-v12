@@ -8,6 +8,7 @@ Included navbar change:
 - Configured external menu links remain in the primary toolbar.
 - All Jellyfin libraries are placed in the existing overflow menu.
 - The overflow menu is labelled `Libraries`.
+- Library backdrops are enabled by default.
 
 The underlying image retains only the passwordless auto-login and its required
 startup synchronization.
