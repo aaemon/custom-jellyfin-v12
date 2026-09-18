@@ -1,7 +1,7 @@
-ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:12.0
+ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:12.1
 FROM ${JELLYFIN_BASE_IMAGE}
 
-ARG JELLYFIN_VERSION=12.0
+ARG JELLYFIN_VERSION=12.1
 ARG JELLYFIN_BASE_IMAGE
 LABEL org.opencontainers.image.source="https://github.com/aaemon/custom-jellyfin-v12"
 LABEL org.opencontainers.image.description="Bijoy Media Jellyfin v12 with libraries in the navbar overflow menu"
@@ -20,6 +20,12 @@ RUN set -eu; \
     OLD="$old_backdrops" NEW="$new_backdrops" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$backdrop_bundle"; \
     test "$(grep -oF "$old_backdrops" "$backdrop_bundle" | wc -l)" -eq 0; \
     grep -qF "$new_backdrops" "$backdrop_bundle"; \
+    old_page_size='return 0===t?0:t||100'; \
+    new_page_size='return 0===t?400:Math.min(t||100,400)'; \
+    test "$(grep -oF "$old_page_size" "$backdrop_bundle" | wc -l)" -eq 1; \
+    OLD="$old_page_size" NEW="$new_page_size" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$backdrop_bundle"; \
+    test "$(grep -oF "$old_page_size" "$backdrop_bundle" | wc -l)" -eq 0; \
+    grep -qF "$new_page_size" "$backdrop_bundle"; \
     navbar_bundle=; \
     for candidate in "$web_root"/*.chunk.js; do \
         if grep -qF 'user-view-overflow-menu' "$candidate"; then \
