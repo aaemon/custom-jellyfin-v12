@@ -74,8 +74,8 @@ RUN set -eu; \
     mv "$navbar_bundle" "$web_root/$new_name"; \
     test -f "$web_root/$new_name"; \
     test "$(grep -oE 'main\.jellyfin\.bundle\.js\?[^" ]+' "$web_root/index.html" | wc -l)" -ge 1; \
-    sed -i -E 's/main\.jellyfin\.bundle\.js\?[^" ]+/main.jellyfin.bundle.js?custom-backdrops1/g' "$web_root/index.html"; \
-    grep -qF 'main.jellyfin.bundle.js?custom-backdrops1' "$web_root/index.html"; \
+    sed -i -E 's/main\.jellyfin\.bundle\.js\?[^" ]+/main.jellyfin.bundle.js?custom-backdrops2/g' "$web_root/index.html"; \
+    grep -qF 'main.jellyfin.bundle.js?custom-backdrops2' "$web_root/index.html"; \
     test "$(grep -oE 'runtime\.bundle\.js\?[^" ]+' "$web_root/index.html" | wc -l)" -ge 1; \
     sed -i -E 's/runtime\.bundle\.js\?[^" ]+/runtime.bundle.js?custom-navbar2/g' "$web_root/index.html"; \
     grep -qF 'runtime.bundle.js?custom-navbar2' "$web_root/index.html"
