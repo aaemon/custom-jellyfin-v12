@@ -52,8 +52,8 @@ RUN set -eu; \
     test "$(grep -oF "$old_cm" "$library_bundle" | wc -l)" -eq 6; \
     OLD="$old_cm" NEW="$new_cm" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/g' "$library_bundle"; \
     test "$(grep -oF "$old_cm" "$library_bundle" | wc -l)" -eq 0; \
-    old_placeholder='refetchOnWindowFocus:!1,enabled:!!y.api'; \
-    new_placeholder='placeholderData:function(e){return e},refetchOnWindowFocus:!1,enabled:!!y.api'; \
+    old_placeholder='{signal:v})},refetchOnWindowFocus:!1,enabled:!!y.api'; \
+    new_placeholder='{signal:v})},placeholderData:function(e){return e},refetchOnWindowFocus:!1,enabled:!!y.api'; \
     test "$(grep -oF "$old_placeholder" "$library_bundle" | wc -l)" -eq 1; \
     OLD="$old_placeholder" NEW="$new_placeholder" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$library_bundle"; \
     test "$(grep -oF "$old_placeholder" "$library_bundle" | wc -l)" -eq 0; \
@@ -102,8 +102,8 @@ RUN set -eu; \
     test "$(grep -oF "$drawer_fallback" "$navbar_bundle" | wc -l)" -eq 0; \
     grep -qF "$server_brand" "$navbar_bundle"; \
     grep -qF "$drawer_brand" "$navbar_bundle"; \
-    old_next_btn='title:O.Ay.translate("Next"),disabled:o||n+r>=i,onClick:c,children:'; \
-    new_next_btn='"data-jf-next":"1",title:O.Ay.translate("Next"),disabled:o||n+r>=i,onClick:c,children:'; \
+    old_next_btn='{title:O.Ay.translate("Next"),disabled:o||n+r>=i,onClick:c,children:'; \
+    new_next_btn='{"data-jf-next":"1",title:O.Ay.translate("Next"),disabled:o||n+r>=i,onClick:c,children:'; \
     test "$(grep -oF "$old_next_btn" "$navbar_bundle" | wc -l)" -eq 1; \
     OLD="$old_next_btn" NEW="$new_next_btn" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$navbar_bundle"; \
     test "$(grep -oF "$old_next_btn" "$navbar_bundle" | wc -l)" -eq 0; \
