@@ -10,7 +10,10 @@ Included navbar change:
 - The overflow menu is labelled `Libraries`.
 - Library backdrops are enabled by default.
 - The public login toolbar and signed-in drawer use `Bijoy Media` as the fallback server name.
-- Library pages are capped at 400 items, including when the stored page-size setting is unlimited.
+- Library pages use progressive (infinite) scrolling: more items load automatically as you
+  reach the bottom of the page instead of stopping at a single page.
+- The per-page batch is capped at 400 items, including when the stored page-size setting is
+  unlimited, so each automatic load stays responsive.
 
 The underlying image retains only the passwordless auto-login and its required
 startup synchronization.
@@ -26,12 +29,12 @@ ghcr.io/aaemon/custom-jellyfin-v12:latest
 
 Published manifests support `linux/amd64` and `linux/arm64`.
 
-Pin a version in production. For Jellyfin v12.1:
+Pin a version in production. For Jellyfin v12.2:
 
 ```yaml
 services:
   jellyfin:
-    image: ghcr.io/aaemon/custom-jellyfin-v12:12.1
+    image: ghcr.io/aaemon/custom-jellyfin-v12:12.2
 ```
 
 ## Local build
