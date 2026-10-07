@@ -15,13 +15,15 @@ const local = movies.concat(series, [Object.assign({}, movies[0], { Id: 'duplica
 const requests = [];
 const feed = { movies: ['999', '888', '5000'].concat(movies.map(m => m.ProviderIds.Tmdb).reverse()),
     tv: series.map(s => s.ProviderIds.Tmdb) };
+let failFeed = false;
 const document = { createElement: () => ({
     classList: { add() {} },
     setAttribute(name, value) { this[name] = value; },
     querySelector() { return this.container || (this.container = {}); }
 }) };
 vm.runInNewContext(fs.readFileSync(path.join(helpers, 'trending-rows.js'), 'utf8'), {
-    window, document, fetch: async () => ({ ok: true, json: async () => feed })
+    window, document, console: { warn() {} },
+    fetch: async () => ({ ok: !failFeed, json: async () => feed })
 });
 const client = { serverId: () => 'server', getUrl: route => '/base/' + route, getCurrentUserId: () => 'user' };
 const deps = {
@@ -64,6 +66,14 @@ const host = { children: [], closest() { return this; },
     const otherUser = await window.BijoyTrendingRows.select({}, client, { Id: 'other' }, 'Movie', deps);
     assert.equal(otherUser.length, 16);
     assert.ok(requests.some(request => request.userId === 'other'));
+    failFeed = true;
+    const failureHost = { children: [], closest() { return this; },
+        querySelector() { return this.children.find(node => node['data-bijoy-trending']); },
+        appendChild(node) { this.children.push(node); } };
+    const failureClient = Object.assign({}, client, { serverId: () => 'unavailable-server' });
+    window.BijoyTrendingRows.install(failureHost, failureClient, { Id: 'user' }, { enableOverflow: true }, deps);
+    const failureResults = await Promise.all(failureHost.children.map(node => node.container.fetchData()));
+    assert.ok(failureResults.every(items => items.length === 0), 'Feed errors must not reject the combined home loader');
     const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv1.chunk.js'), 'utf8');
     assert.ok(chunk.includes('bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A}'));
     assert.ok(chunk.includes('case n.LatestMedia:window.BijoyTrendingRows.install(v,t,r,h,bijoyTrendingDependencies),!function'));

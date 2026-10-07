@@ -100,7 +100,14 @@
                     + '"></div>' + (options.enableOverflow ? '</div>' : '');
                 host.appendChild(section);
                 var container = section.querySelector('.itemsContainer');
-                container.fetchData = function () { return select(api, client, user, entry[0], deps); };
+                container.fetchData = function () {
+                    return select(api, client, user, entry[0], deps).catch(function () {
+                        // A feed outage must not reject Jellyfin's combined home
+                        // section loader or prevent the existing rows loading.
+                        console.warn('[trending] Row unavailable; keeping other home sections active.');
+                        return [];
+                    });
+                };
                 container.getItemsHtml = function (items) {
                     return deps.cards.getCardsHtml({ items: items, shape: deps.portraitShape(options.enableOverflow),
                         context: 'home', preferParentPoster: true, showUnplayedIndicator: false,
