@@ -20,10 +20,16 @@ my $contents = read_file($path);
 my $runtime_path = "$web/runtime.bundle.js";
 my $runtime = read_file($runtime_path);
 if (index($contents, 'window.BijoyHomeLatest.query') < 0) {
-    my $old = 'return u.q.fetchQuery(P(i,s))';
+    # loadSections declares its own R array. Capture the SDK factory at module
+    # scope so the nested home-row callback cannot resolve that shadowed R.
+    my $old = 'var L=r(65369),R=r(71857),P=function(e,t){';
     my $count = () = $contents =~ /\Q$old\E/g;
+    die "Expected one library API import; found $count\n" unless $count == 1;
+    $contents =~ s/\Q$old\E/var L=r(65369),R=r(71857),bijoyLibraryApi=R.Q,P=function(e,t){/;
+    $old = 'return u.q.fetchQuery(P(i,s))';
+    $count = () = $contents =~ /\Q$old\E/g;
     die "Expected one latest-row query; found $count\n" unless $count == 1;
-    $contents =~ s/\Q$old\E/return u.q.fetchQuery(window.BijoyHomeLatest.query(i,s,n,R.Q,P,t))/;
+    $contents =~ s/\Q$old\E/return u.q.fetchQuery(window.BijoyHomeLatest.query(i,s,n,bijoyLibraryApi,P,t))/;
     $old = 's.Ay.translate("LatestFromLibrary",g()(n.Name))';
     $count = () = $contents =~ /\Q$old\E/g;
     die "Expected two home-row headings; found $count\n" unless $count == 2;
@@ -32,15 +38,15 @@ if (index($contents, 'window.BijoyHomeLatest.query') < 0) {
 }
 my $name = $path;
 $name =~ s#^.*/##;
-if ($name ne '65126.bijoyreleasesv1.chunk.js') {
+if ($name ne '65126.bijoyreleasesv2.chunk.js') {
     $name =~ /^65126\.(.+)\.chunk\.js$/ or die "Unexpected chunk name\n";
     my $old = '65126:"' . $1 . '"';
     my $count = () = $runtime =~ /\Q$old\E/g;
     die "Expected one home chunk runtime entry; found $count\n" unless $count == 1;
-    $runtime =~ s/\Q$old\E/65126:"bijoyreleasesv1"/;
+    $runtime =~ s/\Q$old\E/65126:"bijoyreleasesv2"/;
 }
 write_file($path, $contents);
-if ($name ne '65126.bijoyreleasesv1.chunk.js') {
-    rename $path, "$web/65126.bijoyreleasesv1.chunk.js" or die $!;
+if ($name ne '65126.bijoyreleasesv2.chunk.js') {
+    rename $path, "$web/65126.bijoyreleasesv2.chunk.js" or die $!;
 }
 write_file($runtime_path, $runtime);

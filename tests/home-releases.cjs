@@ -6,10 +6,12 @@ const web = process.env.WEB_ROOT || '/jellyfin/jellyfin-web';
 const helpers = process.env.HELPER_ROOT || '/opt/bijoy';
 const window = {};
 vm.runInNewContext(fs.readFileSync(path.join(helpers, 'home-release-order.js'), 'utf8'), { window });
-const contents = fs.readFileSync(path.join(web, '65126.bijoyreleasesv1.chunk.js'), 'utf8');
+const contents = fs.readFileSync(path.join(web, '65126.bijoyreleasesv2.chunk.js'), 'utf8');
 const start = contents.indexOf('function(e,t,r,n,i){var a=i.enableOverflow;return function()');
 const end = contents.indexOf('}}(t,r,n.Id,n.CollectionType,a)', start);
 assert.ok(start >= 0 && end > start);
+assert.ok(contents.includes('bijoyLibraryApi=R.Q,P=function'));
+assert.ok(!contents.includes('query(i,s,n,R.Q,P,t)'));
 let requested;
 let oldQueryCalls = 0;
 const api = {};
@@ -22,7 +24,8 @@ const fetchFunction = vm.runInNewContext('(' + contents.slice(start, end + 2) + 
     L: { X: { Movies: 'movies', Music: 'music', Tvshows: 'tvshows' } },
     C: { y: { Primary: 'Primary', Backdrop: 'Backdrop', Thumb: 'Thumb' } },
     d: { z: { PrimaryImageAspectRatio: 'PrimaryImageAspectRatio', Path: 'Path' } },
-    R: { Q: sdk },
+    // Real loadSections has a local R array, shadowing the SDK import R.
+    R: [], bijoyLibraryApi: sdk,
     P: () => { oldQueryCalls++; return { queryFn: async () => ['existing-latest-row'] }; },
     u: { q: { fetchQuery: options => options.queryFn({ signal: 'abort-signal' }) } }
 });
