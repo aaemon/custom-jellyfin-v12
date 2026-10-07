@@ -34,17 +34,17 @@
             var all = [], start = 0;
             while (true) {
                 var response = await factory(api).getItems({ userId: userId, recursive: true,
-                    includeItemTypes: ['Movie', 'Series'], isVirtualItem: false,
-                    fields: ['ProviderIds', 'ItemCounts'], enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
-                    imageTypeLimit: 1, sortBy: ['SortName'], sortOrder: ['Ascending'],
-                    startIndex: start, limit: 500, enableTotalRecordCount: false });
+                    includeItemTypes: ['Movie', 'Series'], excludeLocationTypes: ['Virtual', 'Remote'],
+                    fields: ['ProviderIds'], enableImages: false, enableUserData: false,
+                    sortBy: ['SortName'], sortOrder: ['Ascending'],
+                    startIndex: start, limit: 2000, enableTotalRecordCount: false });
                 var items = response.data.Items || [];
                 all = all.concat(items);
-                if (items.length < 500) return all;
+                if (items.length < 2000) return all;
                 start += items.length;
             }
         })();
-        inventories.set(cacheKey, { until: Date.now() + 60000, promise: promise });
+        inventories.set(cacheKey, { until: Date.now() + 300000, promise: promise });
         promise.catch(function () { inventories.delete(cacheKey); });
         return promise;
     }
@@ -69,42 +69,71 @@
             feed(client), inventory(api, userId, deps.libraryApi, client.serverId() + ':' + userId)
         ]);
         var matching = match(values[0][kind === 'Movie' ? 'movies' : 'tv'], values[1], kind);
-        if (kind === 'Movie') return matching.slice(0, 16);
-        var playable = [];
-        for (var i = 0; i < matching.length && playable.length < 16; i++) {
-            var response = await deps.libraryApi(api).getItems({ userId: userId,
-                parentId: matching[i].Id, recursive: true, includeItemTypes: ['Episode'],
-                isVirtualItem: false, limit: 1, enableTotalRecordCount: false });
-            var episodes = response.data.Items || [];
-            if (episodes.some(function (episode) {
-                return !episode.IsVirtualItem && !['Virtual', 'Remote'].includes(episode.LocationType);
-            })) playable.push(matching[i]);
+        var selected = matching.slice(0, 16);
+        if (kind === 'Series') {
+            var playable = [];
+            // Batch checks in parallel, but retain feed order when selecting.
+            for (var start = 0; start < matching.length && playable.length < 16; start += 8) {
+                var batch = matching.slice(start, start + 8);
+                var available = await Promise.all(batch.map(async function (series) {
+                    var response = await deps.libraryApi(api).getItems({ userId: userId,
+                        parentId: series.Id, recursive: true, includeItemTypes: ['Episode'],
+                        isMissing: false, excludeLocationTypes: ['Virtual', 'Remote'],
+                        enableImages: false, enableUserData: false,
+                        limit: 1, enableTotalRecordCount: false });
+                    return (response.data.Items || []).some(function (episode) {
+                        return !episode.IsVirtualItem && !['Virtual', 'Remote'].includes(episode.LocationType);
+                    });
+                }));
+                batch.forEach(function (series, index) {
+                    if (available[index]) playable.push(series);
+                });
+            }
+            selected = playable.slice(0, 16);
         }
-        return playable;
+        if (!selected.length) return [];
+        // Only compute artwork and user data for the cards actually displayed.
+        var details = await deps.libraryApi(api).getItems({ userId: userId,
+            ids: selected.map(function (item) { return item.Id; }),
+            includeItemTypes: [kind], fields: ['PrimaryImageAspectRatio'],
+            enableImageTypes: ['Primary', 'Backdrop', 'Thumb'], imageTypeLimit: 1,
+            enableTotalRecordCount: false });
+        var byId = new Map((details.data.Items || []).map(function (item) { return [item.Id, item]; }));
+        return selected.map(function (item) { return byId.get(item.Id); }).filter(Boolean);
     }
 
     function install(host, client, user, options, deps) {
         var home = host.closest('.homeSectionsContainer') || host;
         if (home.querySelector('[data-bijoy-trending]')) return;
         var api = deps.connections.getApi(client.serverId());
-        [ ['Movie', 'Trending (Movies (All))'], ['Series', 'Trending (TV Shows (All))'] ]
+        [ ['Movie', 'Trending Movies'], ['Series', 'Trending TV Shows'] ]
             .forEach(function (entry) {
                 var section = document.createElement('div');
-                section.classList.add('verticalSection', 'hide');
+                section.classList.add('verticalSection');
                 section.setAttribute('data-bijoy-trending', entry[0]);
                 section.innerHTML = '<div class="sectionTitleContainer sectionTitleContainer-cards padded-left">'
                     + '<h2 class="sectionTitle sectionTitle-cards">' + entry[1] + '</h2></div>'
+                    + '<div class="bijoyTrendingStatus padded-left padded-right" role="status">Loading trending titles…</div>'
+                    + '<div class="bijoyTrendingContent">'
                     + (options.enableOverflow ? '<div is="emby-scroller" class="padded-top-focusscale padded-bottom-focusscale" data-centerfocus="true">' : '')
                     + '<div is="emby-itemscontainer" class="itemsContainer '
                     + (options.enableOverflow ? 'scrollSlider focuscontainer-x' : 'focuscontainer-x padded-left padded-right vertical-wrap')
-                    + '"></div>' + (options.enableOverflow ? '</div>' : '');
+                    + '"></div>' + (options.enableOverflow ? '</div>' : '') + '</div>';
                 host.appendChild(section);
                 var container = section.querySelector('.itemsContainer');
+                var status = section.querySelector('.bijoyTrendingStatus');
                 container.fetchData = function () {
-                    return select(api, client, user, entry[0], deps).catch(function () {
+                    status.textContent = 'Loading trending titles…';
+                    status.hidden = false;
+                    return select(api, client, user, entry[0], deps).then(function (items) {
+                        status.hidden = items.length > 0;
+                        if (!items.length) status.textContent = 'No downloaded trending titles available right now.';
+                        return items;
+                    }).catch(function () {
                         // A feed outage must not reject Jellyfin's combined home
                         // section loader or prevent the existing rows loading.
                         console.warn('[trending] Row unavailable; keeping other home sections active.');
+                        status.textContent = 'Trending is temporarily unavailable. Refresh to retry.';
                         return [];
                     });
                 };
@@ -115,7 +144,9 @@
                         centerText: true, overlayPlayButton: true, allowBottomPadding: !options.enableOverflow,
                         cardLayout: false, showTitle: true, showYear: true, lines: 2 });
                 };
-                container.parentContainer = section;
+                // Jellyfin may hide an empty/loading items parent. Keep that
+                // behavior confined to the body, not the row title/status.
+                container.parentContainer = section.querySelector('.bijoyTrendingContent');
             });
     }
 

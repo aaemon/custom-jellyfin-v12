@@ -20,8 +20,8 @@ Included customizations:
 - Movie versions show the full filename suffix, e.g. `Bluray-1080p` instead of `1080p`.
 - Home-page movie-library rows show `Latest releases in ...`, ordered by release date
   descending, while preserving the user/library scope and played-item preferences.
-- Two native-style rows appear before the latest-media sections: `Trending (Movies (All))`
-  and `Trending (TV Shows (All))`, with at most 16 available titles each. Seerr supplies
+- Two native-style rows appear before the latest-media sections: `Trending Movies`
+  and `Trending TV Shows`, with at most 16 available titles each. Seerr supplies
   daily trending order; Jellyfin supplies the user-visible local media and artwork.
 
 The new web assets are patched at image build time and use content-derived cache
@@ -46,8 +46,11 @@ last good feed across restarts. Only the public IDs are served to the browser, n
 Seerr credentials or its local-availability records. The frontend matches TMDb IDs
 against the signed-in user's Jellyfin libraries, excludes virtual/remote movies,
 deduplicates titles, and verifies that each TV series has an available episode.
-When fewer than 16 titles match, fewer are shown; empty rows stay hidden. Existing
-home sections remain usable if the feed service is unavailable.
+When fewer than 16 titles match, fewer are shown. Titles appear immediately with
+a loading/empty/error status; the native loader only hides an empty card body.
+The local index excludes artwork and user-data calculations, full card details
+are fetched only for selected IDs, and TV episode checks run in parallel batches.
+Existing home sections remain usable if the feed service is unavailable.
 
 The underlying image retains only the passwordless auto-login and its required
 startup synchronization.
