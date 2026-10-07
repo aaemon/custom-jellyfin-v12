@@ -12,6 +12,7 @@ services:
       - ${JELLYFIN_CONFIG_PATH:-/docker/jellyfin/config}:/config
       - ${JELLYFIN_CACHE_PATH:-/docker/jellyfin/cache}:/cache
       - ${JELLYFIN_MEDIA_PATH:-/mnt/storage/jellyfin}:/data:ro
+      - ${TRENDING_CONFIG_PATH:-/docker/jellyfin/trending}:/trending
     networks:
       - internal
     restart: unless-stopped

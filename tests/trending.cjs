@@ -1,0 +1,72 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const web = process.env.WEB_ROOT || '/jellyfin/jellyfin-web';
+const helpers = process.env.HELPER_ROOT || '/opt/bijoy';
+const window = {};
+const movies = Array.from({ length: 22 }, (_, i) => ({ Id: 'movie-' + i, Type: 'Movie',
+    Name: 'Movie ' + i, ProviderIds: { Tmdb: String(i + 1) }, LocationType: 'FileSystem' }));
+const series = Array.from({ length: 18 }, (_, i) => ({ Id: 'series-' + i, Type: 'Series',
+    Name: 'Series ' + i, ProviderIds: { Tmdb: String(i + 100) }, LocationType: 'FileSystem' }));
+const local = movies.concat(series, [Object.assign({}, movies[0], { Id: 'duplicate-version' }),
+    { Id: 'virtual', Type: 'Movie', ProviderIds: { Tmdb: '999' }, IsVirtualItem: true },
+    { Id: 'remote', Type: 'Movie', ProviderIds: { Tmdb: '888' }, LocationType: 'Remote' }]);
+const requests = [];
+const feed = { movies: ['999', '888', '5000'].concat(movies.map(m => m.ProviderIds.Tmdb).reverse()),
+    tv: series.map(s => s.ProviderIds.Tmdb) };
+const document = { createElement: () => ({
+    classList: { add() {} },
+    setAttribute(name, value) { this[name] = value; },
+    querySelector() { return this.container || (this.container = {}); }
+}) };
+vm.runInNewContext(fs.readFileSync(path.join(helpers, 'trending-rows.js'), 'utf8'), {
+    window, document, fetch: async () => ({ ok: true, json: async () => feed })
+});
+const client = { serverId: () => 'server', getUrl: route => '/base/' + route, getCurrentUserId: () => 'user' };
+const deps = {
+    connections: { getApi: () => ({}) },
+    libraryApi: () => ({ getItems: async params => {
+        requests.push(params);
+        if (params.includeItemTypes[0] === 'Episode') {
+            return { data: { Items: params.parentId === 'series-0' ? [] : [{ Id: 'episode', Type: 'Episode', LocationType: 'FileSystem' }] } };
+        }
+        return { data: { Items: local } };
+    } }),
+    portraitShape: overflow => overflow ? 'PortraitOverflow' : 'Portrait',
+    cards: { getCardsHtml: options => options }
+};
+const host = { children: [], closest() { return this; },
+    querySelector() { return this.children.find(node => node['data-bijoy-trending']); },
+    appendChild(node) { this.children.push(node); } };
+
+(async () => {
+    window.BijoyTrendingRows.install(host, client, { Id: 'user' }, { enableOverflow: true }, deps);
+    assert.equal(host.children.length, 2);
+    assert.ok(host.children[0].innerHTML.includes('Trending (Movies (All))'));
+    assert.ok(host.children[1].innerHTML.includes('Trending (TV Shows (All))'));
+    window.BijoyTrendingRows.install(host, client, { Id: 'user' }, { enableOverflow: true }, deps);
+    assert.equal(host.children.length, 2, 'Rows must not be duplicated');
+    const [movieResult, tvResult] = await Promise.all(host.children.map(node => node.container.fetchData()));
+    assert.equal(movieResult.length, 16);
+    assert.equal(movieResult[0].Id, 'movie-21', 'Trending order must survive local filtering');
+    assert.equal(new Set(movieResult.map(item => item.ProviderIds.Tmdb)).size, 16);
+    assert.equal(tvResult.length, 16);
+    assert.equal(tvResult[0].Id, 'series-1', 'Series without playable episodes must be excluded');
+    assert.ok(requests.every(request => request.userId === 'user'));
+    assert.equal(requests.filter(request => request.includeItemTypes[0] === 'Movie').length, 1,
+        'Movie and TV rows share the user-scoped inventory request');
+    const cards = host.children[0].container.getItemsHtml(movieResult);
+    assert.equal(cards.context, 'home');
+    assert.equal(cards.shape, 'PortraitOverflow');
+    assert.equal(cards.items.length, 16);
+    assert.equal(host.children[0].container.parentContainer, host.children[0]);
+    const otherUser = await window.BijoyTrendingRows.select({}, client, { Id: 'other' }, 'Movie', deps);
+    assert.equal(otherUser.length, 16);
+    assert.ok(requests.some(request => request.userId === 'other'));
+    const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv1.chunk.js'), 'utf8');
+    assert.ok(chunk.includes('bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A}'));
+    assert.ok(chunk.includes('case n.LatestMedia:window.BijoyTrendingRows.install(v,t,r,h,bijoyTrendingDependencies),!function'));
+    assert.ok(fs.readFileSync(path.join(web, 'index.html'), 'utf8').includes('trending-rows-v1.js?bijoy-'));
+    console.log('Trending: native row design, max 16, local-only matching, rank order, deduplication, episode availability, user scope, and insertion point passed.');
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -6,7 +6,7 @@ const web = process.env.WEB_ROOT || '/jellyfin/jellyfin-web';
 const helpers = process.env.HELPER_ROOT || '/opt/bijoy';
 const window = {};
 vm.runInNewContext(fs.readFileSync(path.join(helpers, 'home-release-order.js'), 'utf8'), { window });
-const contents = fs.readFileSync(path.join(web, '65126.bijoyreleasesv2.chunk.js'), 'utf8');
+const contents = fs.readFileSync(path.join(web, '65126.bijoytrendingv1.chunk.js'), 'utf8');
 const start = contents.indexOf('function(e,t,r,n,i){var a=i.enableOverflow;return function()');
 const end = contents.indexOf('}}(t,r,n.Id,n.CollectionType,a)', start);
 assert.ok(start >= 0 && end > start);

@@ -20,11 +20,34 @@ Included customizations:
 - Movie versions show the full filename suffix, e.g. `Bluray-1080p` instead of `1080p`.
 - Home-page movie-library rows show `Latest releases in ...`, ordered by release date
   descending, while preserving the user/library scope and played-item preferences.
+- Two native-style rows appear before the latest-media sections: `Trending (Movies (All))`
+  and `Trending (TV Shows (All))`, with at most 16 available titles each. Seerr supplies
+  daily trending order; Jellyfin supplies the user-visible local media and artwork.
 
 The new web assets are patched at image build time and use content-derived cache
 URLs. No Compose-mounted web patch scripts or runtime asset downloads are required.
 The movie preferences and home-row behavior apply to Jellyfin Web; native clients
 can have their own selection and sorting behavior.
+
+## Trending feed
+
+Mount a private directory at `/trending` containing `settings.json`:
+
+```json
+{"url":"http://seerr:5055","api_key":"your-seerr-api-key","pages":10}
+```
+
+The Seerr container must be reachable on the same Docker network, or use a reachable
+server-side URL. The Compose example mounts `/docker/jellyfin/trending`, configurable
+with `TRENDING_CONFIG_PATH`. Keep this directory private; never commit the real API key.
+
+The image fetches movie and TV trending IDs from Seerr every six hours and retains the
+last good feed across restarts. Only the public IDs are served to the browser, not the
+Seerr credentials or its local-availability records. The frontend matches TMDb IDs
+against the signed-in user's Jellyfin libraries, excludes virtual/remote movies,
+deduplicates titles, and verifies that each TV series has an available episode.
+When fewer than 16 titles match, fewer are shown; empty rows stay hidden. Existing
+home sections remain usable if the feed service is unavailable.
 
 The underlying image retains only the passwordless auto-login and its required
 startup synchronization.

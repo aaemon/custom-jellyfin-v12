@@ -12,6 +12,10 @@ LABEL io.raspicloud.custom-navbar.version="${JELLYFIN_VERSION}"
 
 USER root
 
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y python3 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY infinite-scroll.js /jellyfin/jellyfin-web/jellyfin-infinite-scroll.js
 COPY customizations/ /opt/bijoy/
 
@@ -145,6 +149,7 @@ RUN set -eu; \
 
 RUN perl /opt/bijoy/prefer-1080.pl \
     && perl /opt/bijoy/home-release-order.pl \
+    && perl /opt/bijoy/trending-rows.pl \
     && perl /opt/bijoy/apply-branding.pl
 
 ENTRYPOINT ["/bin/sh", "/opt/bijoy/entrypoint.sh"]

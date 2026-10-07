@@ -43,15 +43,18 @@ for my $path (glob("$web/*.js"), glob("$web/*.css"), glob("$web/*.html"), glob("
 for my $script (
     ['bijoy-branding.js', 'bijoy-branding.js'],
     ['media-source-preference.js', 'media-source-preference-v2.js'],
-    ['home-release-order.js', 'home-release-order-v1.js']
+    ['home-release-order.js', 'home-release-order-v1.js'],
+    ['trending-rows.js', 'trending-rows-v1.js']
 ) {
     write_file("$web/$script->[1]", read_file("$source/$script->[0]"));
 }
+write_file("$web/bijoy-trending.json", read_file("$source/bijoy-trending.json"));
 my $index_path = "$web/index.html";
 my $index = read_file($index_path);
 $index =~ s#<title>[^<]*</title>#<title>Bijoy Media</title># or die "Missing page title\n";
 my $scripts = '<script defer="defer" src="media-source-preference-v2.js"></script>'
     . '<script defer="defer" src="home-release-order-v1.js"></script>'
+    . '<script defer="defer" src="trending-rows-v1.js"></script>'
     . '<script defer="defer" src="bijoy-branding.js"></script>';
 $index =~ s#<head>#<head>$scripts# or die "Missing HTML head\n";
 

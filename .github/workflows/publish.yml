@@ -92,6 +92,10 @@ jobs:
             --build-arg CUSTOM_REVISION="$GITHUB_SHA" \
             -t bijoy-web-validation .
           container=$(docker create bijoy-web-validation)
+          docker run --rm --entrypoint python3 \
+            -v "$PWD/tests:/tests:ro" \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            bijoy-web-validation -m unittest discover -s /tests -p 'test_trending_feed.py' -v
           trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
           mkdir -p .image-web
           docker cp "$container:/jellyfin/jellyfin-web/." .image-web/
@@ -103,10 +107,11 @@ jobs:
               node --check /workspace/.image-web/main.jellyfin.bundle.js
               node --check /workspace/.image-web/runtime.bundle.js
               node --check /workspace/.image-web/itemDetails.bijoy1080v2.chunk.js
-              node --check /workspace/.image-web/65126.bijoyreleasesv2.chunk.js
+              node --check /workspace/.image-web/65126.bijoytrendingv1.chunk.js
               node /workspace/tests/movie-versions.cjs
               node /workspace/tests/home-releases.cjs
               node /workspace/tests/branding.cjs
+              node /workspace/tests/trending.cjs
             '
 
       - uses: docker/setup-qemu-action@v4
