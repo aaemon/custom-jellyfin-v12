@@ -1,3 +1,5 @@
 *
 !Dockerfile
 !infinite-scroll.js
+!customizations/
+!customizations/**

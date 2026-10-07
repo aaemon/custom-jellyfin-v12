@@ -1,0 +1,36 @@
+name: bijoy-media
+services:
+  jellyfin:
+    image: ${JELLYFIN_IMAGE:-ghcr.io/aaemon/custom-jellyfin-v12:12.2}
+    container_name: jellyfin
+    hostname: bijoy-media
+    environment:
+      TZ: Asia/Dhaka
+    ports:
+      - "8096:8096"
+    volumes:
+      - ${JELLYFIN_CONFIG_PATH:-/docker/jellyfin/config}:/config
+      - ${JELLYFIN_CACHE_PATH:-/docker/jellyfin/cache}:/cache
+      - ${JELLYFIN_MEDIA_PATH:-/mnt/storage/jellyfin}:/data:ro
+    networks:
+      - internal
+    restart: unless-stopped
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: npm
+    ports:
+      - "${NPM_BIND_IP:-10.20.30.50}:80:80"
+      - "${NPM_BIND_IP:-10.20.30.50}:81:81"
+      - "${NPM_BIND_IP:-10.20.30.50}:443:443"
+    volumes:
+      - ${NPM_DATA_PATH:-/docker/npm/data}:/data
+      - ${NPM_CERT_PATH:-/docker/npm/letsencrypt}:/etc/letsencrypt
+    depends_on:
+      - jellyfin
+    networks:
+      - internal
+    restart: unless-stopped
+networks:
+  internal:
+    external: true
+    name: internal

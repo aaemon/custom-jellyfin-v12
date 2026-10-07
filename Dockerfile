@@ -3,14 +3,17 @@ FROM ${JELLYFIN_BASE_IMAGE}
 
 ARG JELLYFIN_VERSION=12.2
 ARG JELLYFIN_BASE_IMAGE
+ARG CUSTOM_REVISION=local
 LABEL org.opencontainers.image.source="https://github.com/aaemon/custom-jellyfin-v12"
-LABEL org.opencontainers.image.description="Bijoy Media Jellyfin v12 with libraries in the navbar overflow menu"
+LABEL org.opencontainers.image.description="Bijoy Media Jellyfin with custom branding, infinite scrolling, 1080p movie defaults and release-date home rows"
+LABEL org.opencontainers.image.revision="${CUSTOM_REVISION}"
 LABEL io.raspicloud.custom-navbar.base-image="${JELLYFIN_BASE_IMAGE}"
 LABEL io.raspicloud.custom-navbar.version="${JELLYFIN_VERSION}"
 
 USER root
 
 COPY infinite-scroll.js /jellyfin/jellyfin-web/jellyfin-infinite-scroll.js
+COPY customizations/ /opt/bijoy/
 
 RUN set -eu; \
     web_root=/jellyfin/jellyfin-web; \
@@ -139,3 +142,9 @@ RUN set -eu; \
     test "$(grep -oF '</body>' "$web_root/index.html" | wc -l)" -eq 1; \
     sed -i 's#</body>#<script defer="defer" src="jellyfin-infinite-scroll.js?custom-infinite1"></script></body>#' "$web_root/index.html"; \
     grep -qF 'jellyfin-infinite-scroll.js?custom-infinite1' "$web_root/index.html"
+
+RUN perl /opt/bijoy/prefer-1080.pl \
+    && perl /opt/bijoy/home-release-order.pl \
+    && perl /opt/bijoy/apply-branding.pl
+
+ENTRYPOINT ["/bin/sh", "/opt/bijoy/entrypoint.sh"]

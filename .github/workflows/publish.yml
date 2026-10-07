@@ -81,6 +81,34 @@ jobs:
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Validate image customizations before publishing
+        if: steps.existing.outputs.publish == 'true' && steps.base.outputs.available == 'true'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build \
+            --build-arg JELLYFIN_VERSION=${{ steps.upstream.outputs.version }} \
+            --build-arg JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:${{ steps.upstream.outputs.version }} \
+            --build-arg CUSTOM_REVISION="$GITHUB_SHA" \
+            -t bijoy-web-validation .
+          container=$(docker create bijoy-web-validation)
+          trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
+          mkdir -p .image-web
+          docker cp "$container:/jellyfin/jellyfin-web/." .image-web/
+          docker run --rm \
+            -v "$PWD:/workspace:ro" \
+            -e WEB_ROOT=/workspace/.image-web \
+            -e HELPER_ROOT=/workspace/customizations \
+            node:24-alpine sh -ec '
+              node --check /workspace/.image-web/main.jellyfin.bundle.js
+              node --check /workspace/.image-web/runtime.bundle.js
+              node --check /workspace/.image-web/itemDetails.bijoy1080v2.chunk.js
+              node --check /workspace/.image-web/65126.bijoyreleasesv1.chunk.js
+              node /workspace/tests/movie-versions.cjs
+              node /workspace/tests/home-releases.cjs
+              node /workspace/tests/branding.cjs
+            '
+
       - uses: docker/setup-qemu-action@v4
         if: steps.existing.outputs.publish == 'true' && steps.base.outputs.available == 'true'
         with:
@@ -95,6 +123,7 @@ jobs:
           build-args: |
             JELLYFIN_VERSION=${{ steps.upstream.outputs.version }}
             JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:${{ steps.upstream.outputs.version }}
+            CUSTOM_REVISION=${{ github.sha }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ steps.upstream.outputs.version }}
             ghcr.io/${{ github.repository }}:latest
