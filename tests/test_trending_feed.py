@@ -23,6 +23,14 @@ class Response:
         pass
 
 class TrendingTests(unittest.TestCase):
+    def test_preparation_retries_the_server_startup_transition(self):
+        with patch.object(feed, 'prepare', side_effect=[ConnectionError('starting'), {'movies':['id'],'tv':[]}]) as prepare:
+            with patch.object(feed.time, 'sleep') as sleep:
+                result = feed.prepare_with_retry({'movies':[],'tv':[]}, 'http://jellyfin:8096', attempts=3)
+        self.assertEqual(result['movies'], ['id'])
+        self.assertEqual(prepare.call_count, 2)
+        sleep.assert_called_once_with(5)
+
     def test_public_feed_has_ids_and_preserves_order_without_credentials(self):
         def respond(request, **kwargs):
             self.assertEqual(request.get_header('X-api-key'), 'private-key')

@@ -107,9 +107,9 @@ jobs:
               node --check /workspace/.image-web/main.jellyfin.bundle.js
               node --check /workspace/.image-web/runtime.bundle.js
               node --check /workspace/.image-web/itemDetails.bijoy1080v2.chunk.js
-              node --check /workspace/.image-web/65126.bijoytrendingv1.chunk.js
+              node --check /workspace/.image-web/65126.bijoytrendingv2.chunk.js
               node /workspace/tests/movie-versions.cjs
-              node /workspace/tests/home-releases.cjs
+              node /workspace/tests/home-defaults.cjs
               node /workspace/tests/branding.cjs
               node /workspace/tests/trending.cjs
             '

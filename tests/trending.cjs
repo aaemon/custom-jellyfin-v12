@@ -113,7 +113,7 @@ const host = { children: [], closest() { return this; },
     const failureResults = await Promise.all(failureHost.children.map(node => node.container.fetchData()));
     assert.ok(failureResults.every(items => items.length === 0), 'Feed errors must not reject the combined home loader');
     assert.ok(failureHost.children.every(section => section.status.textContent.includes('temporarily unavailable')));
-    const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv1.chunk.js'), 'utf8');
+    const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv2.chunk.js'), 'utf8');
     assert.ok(chunk.includes('bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A}'));
     assert.ok(chunk.includes('case n.LatestMedia:window.BijoyTrendingRows.install(v,t,r,h,bijoyTrendingDependencies),!function'));
     assert.ok(fs.readFileSync(path.join(web, 'index.html'), 'utf8').includes('trending-rows-v1.js?bijoy-'));

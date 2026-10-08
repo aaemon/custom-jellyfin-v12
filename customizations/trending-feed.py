@@ -35,6 +35,18 @@ def save(path, value):
     temporary.write_text(json.dumps(value))
     temporary.replace(path)
 
+def prepare_with_retry(feed, base, attempts=12):
+    # Jellyfin's setup listener can answer before the final server listener has
+    # replaced it. Retry across that startup transition instead of waiting six
+    # hours after a single connection failure.
+    for attempt in range(attempts):
+        try:
+            return prepare(feed, base=base)
+        except Exception:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(5)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--once', action='store_true')
@@ -73,7 +85,7 @@ def main():
             except Exception:
                 time.sleep(2)
         try:
-            ready = prepare(json.loads(cached.read_text()), base=base)
+            ready = prepare_with_retry(json.loads(cached.read_text()), base=base)
             save(ready_cached, ready)
             save(ready_output, ready)
         except Exception as error:

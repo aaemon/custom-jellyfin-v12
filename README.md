@@ -18,8 +18,7 @@ Included customizations:
 - Movie detail pages and automatic web playback prefer an available, playable 1080p
   source. Explicit 2160p/720p selections still take priority.
 - Movie versions show the full filename suffix, e.g. `Bluray-1080p` instead of `1080p`.
-- Home-page movie-library rows show `Latest releases in ...`, ordered by release date
-  descending, while preserving the user/library scope and played-item preferences.
+- Home-page library rows use Jellyfin's default Recently Added queries and headings.
 - Two native-style rows appear before the latest-media sections: `Trending Movies`
   and `Trending TV Shows`, with at most 16 available titles each. Seerr supplies
   daily trending order; Jellyfin supplies the user-visible local media and artwork.
@@ -131,5 +130,5 @@ The Node tests accept `WEB_ROOT` for an extracted image web directory and
 
 ```bash
 WEB_ROOT=/path/to/extracted/web HELPER_ROOT="$PWD/customizations" node tests/movie-versions.cjs
-WEB_ROOT=/path/to/extracted/web HELPER_ROOT="$PWD/customizations" node tests/home-releases.cjs
+WEB_ROOT=/path/to/extracted/web node tests/home-defaults.cjs
 ```
