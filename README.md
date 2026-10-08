@@ -21,6 +21,8 @@ Included customizations:
   source. Explicit 2160p/720p selections still take priority.
 - Movie versions show the full filename suffix, e.g. `Bluray-1080p` instead of `1080p`.
 - Home-page library rows use Jellyfin's default Recently Added queries and headings.
+- Played items are shown in Recently Added by default. Existing users are migrated once;
+  new users inherit this default. Users may still change their own preference.
 - Two native-style rows appear before the latest-media sections: `Trending Movies`
   and `Trending TV Shows`, with at most 16 available titles each. Seerr supplies
   daily trending order; Jellyfin supplies the user-visible local media and artwork.

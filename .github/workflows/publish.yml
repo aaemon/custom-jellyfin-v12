@@ -96,6 +96,8 @@ jobs:
             -v "$PWD/tests:/tests:ro" \
             -e PYTHONDONTWRITEBYTECODE=1 \
             bijoy-web-validation -m unittest discover -s /tests -p 'test_trending_*.py' -v
+          docker run --rm --entrypoint sh -v "$PWD/tests:/tests:ro" bijoy-web-validation /tests/restrict-bijoy-preferences.sh
+          docker run --rm --entrypoint sh -v "$PWD/tests:/tests:ro" bijoy-web-validation /tests/latest-visible-default.sh
           trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
           mkdir -p .image-web
           docker cp "$container:/jellyfin/jellyfin-web/." .image-web/
