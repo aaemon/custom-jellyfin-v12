@@ -26,7 +26,12 @@ if (index($contents, 'window.BijoyTrendingRows.install') < 0) {
     my $old = 'r(15453),r(1177),r(41765),r(10353);var B=';
     my $count = () = $contents =~ /\Q$old\E/g;
     die "Expected home dependency anchor once\n" unless $count == 1;
-    my $new = 'r(15453),r(1177),r(41765),r(10353);var bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A},B=';
+    my $new = 'r(15453),r(1177),r(41765),r(10353);var bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A,queryClient:u.q},B=';
+    $contents =~ s/\Q$old\E/$new/;
+    $old = 'loadSections:function(e,t,r,a){var f=l.A.getApi(t.serverId()),v=r.Id||t.getCurrentUserId();return';
+    $count = () = $contents =~ /\Q$old\E/g;
+    die "Expected home preloading point once\n" unless $count == 1;
+    $new = 'loadSections:function(e,t,r,a){var f=l.A.getApi(t.serverId()),v=r.Id||t.getCurrentUserId();window.BijoyTrendingRows.prefetch(t,r,bijoyTrendingDependencies);return';
     $contents =~ s/\Q$old\E/$new/;
     $old = 'case n.LatestMedia:!function(e,t,r,n,a){';
     $count = () = $contents =~ /\Q$old\E/g;
@@ -36,13 +41,13 @@ if (index($contents, 'window.BijoyTrendingRows.install') < 0) {
 }
 my $name = $file;
 $name =~ s#^.*/##;
-if ($name ne '65126.bijoytrendingv2.chunk.js') {
+if ($name ne '65126.bijoytrendingv3.chunk.js') {
     $name =~ /^65126\.(.+)\.chunk\.js$/ or die "Unexpected home chunk name\n";
     my $old = '65126:"' . $1 . '"';
     my $count = () = $runtime =~ /\Q$old\E/g;
     die "Expected runtime home reference once\n" unless $count == 1;
-    $runtime =~ s/\Q$old\E/65126:"bijoytrendingv2"/;
+    $runtime =~ s/\Q$old\E/65126:"bijoytrendingv3"/;
 }
 write_file($file, $contents);
-rename $file, "$web/65126.bijoytrendingv2.chunk.js" or die $! if $name ne '65126.bijoytrendingv2.chunk.js';
+rename $file, "$web/65126.bijoytrendingv3.chunk.js" or die $! if $name ne '65126.bijoytrendingv3.chunk.js';
 write_file("$web/runtime.bundle.js", $runtime);

@@ -48,6 +48,8 @@ The shared ready file contains only opaque item IDs and a timestamp, not media
 names, paths, user data, or credentials. A short-lived preparation key is removed
 after each pass. The frontend reads the ready list and requests details for the selected
 cards, so a page reload does not scan the library or check episode availability.
+Trending cards are preloaded alongside the initial home-page queries and reuse
+Jellyfin's native user-scoped query cache, like the existing library rows.
 Those authenticated card requests enforce the user's current access permissions.
 This shared-list mode is intended for this deployment's common library access.
 Before a new server's first preparation completes, the lightweight matching

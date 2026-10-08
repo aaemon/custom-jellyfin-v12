@@ -13,6 +13,7 @@ const local = movies.concat(series, [Object.assign({}, movies[0], { Id: 'duplica
     { Id: 'virtual', Type: 'Movie', ProviderIds: { Tmdb: '999' }, IsVirtualItem: true },
     { Id: 'remote', Type: 'Movie', ProviderIds: { Tmdb: '888' }, LocationType: 'Remote' }]);
 const requests = [];
+const queryCache = new Map();
 let activeEpisodeRequests = 0;
 let maxEpisodeRequests = 0;
 const feed = { movies: ['999', '888', '5000'].concat(movies.map(m => m.ProviderIds.Tmdb).reverse()),
@@ -36,6 +37,11 @@ vm.runInNewContext(fs.readFileSync(path.join(helpers, 'trending-rows.js'), 'utf8
 });
 const client = { serverId: () => 'server', getUrl: route => '/base/' + route, getCurrentUserId: () => 'user' };
 const deps = {
+    queryClient: { fetchQuery: options => {
+        const key = JSON.stringify(options.queryKey);
+        if (!queryCache.has(key)) queryCache.set(key, options.queryFn({ signal: 'test-signal' }));
+        return queryCache.get(key);
+    } },
     connections: { getApi: () => ({}) },
     libraryApi: () => ({ getItems: async params => {
         requests.push(params);
@@ -104,6 +110,11 @@ const host = { children: [], closest() { return this; },
     assert.equal(anotherPrepared.map(item => item.Id).join(','), 'movie-8,movie-2');
     assert.equal(requests[requests.length - 1].userId, 'another-ready-user',
         'Shared IDs still require each user’s authenticated detail request');
+    await window.BijoyTrendingRows.prefetch(preparedClient, { Id: 'preloaded-user' }, deps);
+    const afterPrefetch = requests.length;
+    await Promise.all(['Movie','Series'].map(kind => window.BijoyTrendingRows.select({}, preparedClient,
+        { Id: 'preloaded-user' }, kind, deps)));
+    assert.equal(requests.length, afterPrefetch, 'Rendering after prefetch must reuse native card query cache');
     failFeed = true;
     const failureHost = { children: [], closest() { return this; },
         querySelector() { return this.children.find(node => node['data-bijoy-trending']); },
@@ -113,8 +124,9 @@ const host = { children: [], closest() { return this; },
     const failureResults = await Promise.all(failureHost.children.map(node => node.container.fetchData()));
     assert.ok(failureResults.every(items => items.length === 0), 'Feed errors must not reject the combined home loader');
     assert.ok(failureHost.children.every(section => section.status.textContent.includes('temporarily unavailable')));
-    const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv2.chunk.js'), 'utf8');
-    assert.ok(chunk.includes('bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A}'));
+    const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv3.chunk.js'), 'utf8');
+    assert.ok(chunk.includes('bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A,queryClient:u.q}'));
+    assert.ok(chunk.includes('window.BijoyTrendingRows.prefetch(t,r,bijoyTrendingDependencies);return u.q.fetchQuery'));
     assert.ok(chunk.includes('case n.LatestMedia:window.BijoyTrendingRows.install(v,t,r,h,bijoyTrendingDependencies),!function'));
     assert.ok(fs.readFileSync(path.join(web, 'index.html'), 'utf8').includes('trending-rows-v1.js?bijoy-'));
     console.log('Trending: native row design, max 16, local-only matching, rank order, deduplication, episode availability, user scope, and insertion point passed.');

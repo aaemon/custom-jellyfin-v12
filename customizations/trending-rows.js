@@ -20,12 +20,20 @@
 
     async function cardDetails(api, userId, kind, identifiers, deps) {
         if (!identifiers.length) return [];
-        var details = await deps.libraryApi(api).getItems({ userId: userId, ids: identifiers.slice(0, 16),
-            includeItemTypes: [kind], fields: ['PrimaryImageAspectRatio'],
-            enableImageTypes: ['Primary', 'Backdrop', 'Thumb'], imageTypeLimit: 1,
-            enableTotalRecordCount: false });
-        var byId = new Map((details.data.Items || []).map(function (item) { return [item.Id, item]; }));
-        return identifiers.slice(0, 16).map(function (id) { return byId.get(id); }).filter(Boolean);
+        var selected = identifiers.slice(0, 16);
+        var load = async function (context) {
+            var details = await deps.libraryApi(api).getItems({ userId: userId, ids: selected,
+                includeItemTypes: [kind], fields: ['PrimaryImageAspectRatio'],
+                enableImageTypes: ['Primary', 'Backdrop', 'Thumb'], imageTypeLimit: 1,
+                enableTotalRecordCount: false }, { signal: context && context.signal });
+            var byId = new Map((details.data.Items || []).map(function (item) { return [item.Id, item]; }));
+            return selected.map(function (id) { return byId.get(id); }).filter(Boolean);
+        };
+        if (!deps.queryClient) return load();
+        return deps.queryClient.fetchQuery({
+            queryKey: ['User', userId, 'Items', 'BijoyTrendingCards', kind, selected],
+            queryFn: load, staleTime: 60000
+        });
     }
 
     function tmdbId(item) {
@@ -173,5 +181,16 @@
             });
     }
 
-    global.BijoyTrendingRows = { install: install, match: match, select: select };
+    function prefetch(client, user, deps) {
+        var api = deps.connections.getApi(client.serverId());
+        if (!api) return Promise.resolve([]);
+        return Promise.all(['Movie', 'Series'].map(function (kind) {
+            return select(api, client, user, kind, deps).catch(function () {
+                // Preloading must never interrupt the native home loader.
+                return [];
+            });
+        }));
+    }
+
+    global.BijoyTrendingRows = { install: install, match: match, select: select, prefetch: prefetch };
 })(window);
