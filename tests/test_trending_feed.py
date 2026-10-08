@@ -1,11 +1,13 @@
 import importlib.util
 import json
 import os
+import sys
 from pathlib import Path
 import unittest
 from unittest.mock import patch
 
 source = Path(os.environ.get('HELPER_ROOT', '/opt/bijoy')) / 'trending-feed.py'
+sys.path.insert(0, str(source.parent))
 spec = importlib.util.spec_from_file_location('trending_feed', source)
 feed = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(feed)

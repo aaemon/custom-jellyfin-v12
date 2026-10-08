@@ -95,7 +95,7 @@ jobs:
           docker run --rm --entrypoint python3 \
             -v "$PWD/tests:/tests:ro" \
             -e PYTHONDONTWRITEBYTECODE=1 \
-            bijoy-web-validation -m unittest discover -s /tests -p 'test_trending_feed.py' -v
+            bijoy-web-validation -m unittest discover -s /tests -p 'test_trending_*.py' -v
           trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
           mkdir -p .image-web
           docker cp "$container:/jellyfin/jellyfin-web/." .image-web/

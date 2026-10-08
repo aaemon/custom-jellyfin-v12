@@ -2,6 +2,31 @@
     'use strict';
     var inventories = new Map();
     var feeds = new Map();
+    var readyLists = new Map();
+
+    function ready(client) {
+        var key = client.serverId();
+        var cached = readyLists.get(key);
+        if (cached && cached.until > Date.now()) return cached.promise;
+        var promise = fetch(client.getUrl('web/bijoy-trending-ready.json'), { cache: 'no-store' })
+            .then(function (response) {
+                if (!response.ok) throw new Error('Prepared trending list unavailable');
+                return response.json();
+            }).then(function (value) { return value.updatedAt ? value : null; });
+        readyLists.set(key, { until: Date.now() + 60000, promise: promise });
+        promise.catch(function () { readyLists.delete(key); });
+        return promise;
+    }
+
+    async function cardDetails(api, userId, kind, identifiers, deps) {
+        if (!identifiers.length) return [];
+        var details = await deps.libraryApi(api).getItems({ userId: userId, ids: identifiers.slice(0, 16),
+            includeItemTypes: [kind], fields: ['PrimaryImageAspectRatio'],
+            enableImageTypes: ['Primary', 'Backdrop', 'Thumb'], imageTypeLimit: 1,
+            enableTotalRecordCount: false });
+        var byId = new Map((details.data.Items || []).map(function (item) { return [item.Id, item]; }));
+        return identifiers.slice(0, 16).map(function (id) { return byId.get(id); }).filter(Boolean);
+    }
 
     function tmdbId(item) {
         var ids = item.ProviderIds || {};
@@ -65,6 +90,12 @@
 
     async function select(api, client, user, kind, deps) {
         var userId = user.Id || client.getCurrentUserId();
+        var prepared = await ready(client).catch(function () { return null; });
+        if (prepared) {
+            // The shared file contains only opaque item IDs. Authenticated
+            // detail reads enforce current visibility before rendering cards.
+            return cardDetails(api, userId, kind, prepared[kind === 'Movie' ? 'movies' : 'tv'], deps);
+        }
         var values = await Promise.all([
             feed(client), inventory(api, userId, deps.libraryApi, client.serverId() + ':' + userId)
         ]);
@@ -91,15 +122,7 @@
             }
             selected = playable.slice(0, 16);
         }
-        if (!selected.length) return [];
-        // Only compute artwork and user data for the cards actually displayed.
-        var details = await deps.libraryApi(api).getItems({ userId: userId,
-            ids: selected.map(function (item) { return item.Id; }),
-            includeItemTypes: [kind], fields: ['PrimaryImageAspectRatio'],
-            enableImageTypes: ['Primary', 'Backdrop', 'Thumb'], imageTypeLimit: 1,
-            enableTotalRecordCount: false });
-        var byId = new Map((details.data.Items || []).map(function (item) { return [item.Id, item]; }));
-        return selected.map(function (item) { return byId.get(item.Id); }).filter(Boolean);
+        return cardDetails(api, userId, kind, selected.map(function (item) { return item.Id; }), deps);
     }
 
     function install(host, client, user, options, deps) {

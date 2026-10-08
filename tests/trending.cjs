@@ -18,6 +18,7 @@ let maxEpisodeRequests = 0;
 const feed = { movies: ['999', '888', '5000'].concat(movies.map(m => m.ProviderIds.Tmdb).reverse()),
     tv: series.map(s => s.ProviderIds.Tmdb) };
 let failFeed = false;
+let preparedReady = null;
 const document = { createElement: () => ({
     classList: { names: [], add(...names) { this.names.push(...names); } },
     setAttribute(name, value) { this[name] = value; },
@@ -29,7 +30,9 @@ const document = { createElement: () => ({
 }) };
 vm.runInNewContext(fs.readFileSync(path.join(helpers, 'trending-rows.js'), 'utf8'), {
     window, document, console: { warn() {} },
-    fetch: async () => ({ ok: !failFeed, json: async () => feed })
+    fetch: async url => ({ ok: !failFeed,
+        json: async () => url.includes('bijoy-trending-ready.json')
+            ? (preparedReady || { updatedAt: null, movies: [], tv: [] }) : feed })
 });
 const client = { serverId: () => 'server', getUrl: route => '/base/' + route, getCurrentUserId: () => 'user' };
 const deps = {
@@ -88,6 +91,19 @@ const host = { children: [], closest() { return this; },
     const otherUser = await window.BijoyTrendingRows.select({}, client, { Id: 'other' }, 'Movie', deps);
     assert.equal(otherUser.length, 16);
     assert.ok(requests.some(request => request.userId === 'other'));
+    preparedReady = { updatedAt: 123, movies: ['movie-8','movie-2'], tv: ['series-4'] };
+    const preparedClient = Object.assign({}, client, { serverId: () => 'ready-server' });
+    const requestCount = requests.length;
+    const prepared = await Promise.all(['Movie','Series'].map(kind =>
+        window.BijoyTrendingRows.select({}, preparedClient, { Id: 'ready-user' }, kind, deps)));
+    assert.equal(prepared[0].map(item => item.Id).join(','), 'movie-8,movie-2');
+    assert.equal(prepared[1][0].Id, 'series-4');
+    assert.ok(requests.slice(requestCount).every(request => request.ids),
+        'Ready-list path must only fetch selected cards: no inventory scans or episode checks');
+    const anotherPrepared = await window.BijoyTrendingRows.select({}, preparedClient, { Id: 'another-ready-user' }, 'Movie', deps);
+    assert.equal(anotherPrepared.map(item => item.Id).join(','), 'movie-8,movie-2');
+    assert.equal(requests[requests.length - 1].userId, 'another-ready-user',
+        'Shared IDs still require each user’s authenticated detail request');
     failFeed = true;
     const failureHost = { children: [], closest() { return this; },
         querySelector() { return this.children.find(node => node['data-bijoy-trending']); },

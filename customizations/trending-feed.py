@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 import urllib.parse
 import urllib.request
+from trending_ready import prepare
 
 def fetch_feed(settings):
     result = {'movies': [], 'tv': [], 'updatedAt': time.time(), 'timeWindow': 'day'}
@@ -43,8 +44,12 @@ def main():
     config = Path(args.config)
     output = Path(args.output)
     cached = config.parent / 'feed.json'
+    ready_cached = config.parent / 'ready.json'
+    ready_output = output.parent / 'bijoy-trending-ready.json'
     if cached.exists():
         output.write_bytes(cached.read_bytes())
+    if ready_cached.exists():
+        ready_output.write_bytes(ready_cached.read_bytes())
     while True:
         try:
             settings = json.loads(config.read_text())
@@ -56,6 +61,24 @@ def main():
         except Exception as error:
             # Do not print request headers, response contents, or credentials.
             print('[trending] Feed refresh failed (' + type(error).__name__ + '); keeping cached feed.', flush=True)
+            if args.once:
+                raise
+        # The server may still be booting when this child process starts.
+        base = os.environ.get('JELLYFIN_INTERNAL_URL', 'http://127.0.0.1:8096')
+        for attempt in range(60):
+            try:
+                with urllib.request.urlopen(base + '/System/Info/Public', timeout=5) as response:
+                    if response.status == 200:
+                        break
+            except Exception:
+                time.sleep(2)
+        try:
+            ready = prepare(json.loads(cached.read_text()), base=base)
+            save(ready_cached, ready)
+            save(ready_output, ready)
+        except Exception as error:
+            print('[trending] Ready-list preparation failed (' + type(error).__name__
+                  + '); keeping the previous shared list.', flush=True)
             if args.once:
                 raise
         if args.once:

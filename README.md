@@ -42,14 +42,21 @@ server-side URL. The Compose example mounts `/docker/jellyfin/trending`, configu
 with `TRENDING_CONFIG_PATH`. Keep this directory private; never commit the real API key.
 
 The image fetches movie and TV trending IDs from Seerr every six hours and retains the
-last good feed across restarts. Only the public IDs are served to the browser, not the
-Seerr credentials or its local-availability records. The frontend matches TMDb IDs
-against the signed-in user's Jellyfin libraries, excludes virtual/remote movies,
-deduplicates titles, and verifies that each TV series has an available episode.
+last good feed across restarts. It prepares one shared available movie/series list
+on the server, including deduplication and playable-episode checks. The selection
+uses Bijoy's common library access (or an enabled user's access on a new server).
+The shared ready file contains only opaque item IDs and a timestamp, not media
+names, paths, user data, or credentials. A short-lived preparation key is removed
+after each pass. The frontend reads the ready list and requests details for the selected
+cards, so a page reload does not scan the library or check episode availability.
+Those authenticated card requests enforce the user's current access permissions.
+This shared-list mode is intended for this deployment's common library access.
+Before a new server's first preparation completes, the lightweight matching
+fallback remains available. No Seerr credentials are sent to the browser.
 When fewer than 16 titles match, fewer are shown. Titles appear immediately with
 a loading/empty/error status; the native loader only hides an empty card body.
-The local index excludes artwork and user-data calculations, full card details
-are fetched only for selected IDs, and TV episode checks run in parallel batches.
+The fallback local index excludes artwork and user-data calculations, full card
+details are fetched only for selected IDs, and fallback TV checks run in parallel.
 Existing home sections remain usable if the feed service is unavailable.
 
 The underlying image retains only the passwordless auto-login and its required

@@ -49,6 +49,7 @@ for my $script (
     write_file("$web/$script->[1]", read_file("$source/$script->[0]"));
 }
 write_file("$web/bijoy-trending.json", read_file("$source/bijoy-trending.json"));
+write_file("$web/bijoy-trending-ready.json", read_file("$source/bijoy-trending-ready.json"));
 my $index_path = "$web/index.html";
 my $index = read_file($index_path);
 $index =~ s#<title>[^<]*</title>#<title>Bijoy Media</title># or die "Missing page title\n";
