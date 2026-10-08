@@ -31,20 +31,31 @@ class TrendingTests(unittest.TestCase):
         self.assertEqual(prepare.call_count, 2)
         sleep.assert_called_once_with(5)
 
-    def test_public_feed_has_ids_and_preserves_order_without_credentials(self):
+    def test_tmdb_feed_has_ids_and_preserves_order_without_credentials(self):
+        calls = []
         def respond(request, **kwargs):
-            self.assertEqual(request.get_header('X-api-key'), 'private-key')
-            self.assertIn('timeWindow=day', request.full_url)
-            if 'mediaType=movie' in request.full_url:
-                return Response({'totalPages': 1, 'results': [
-                    {'id': 12, 'mediaType': 'movie'}, {'id': 9, 'mediaType': 'movie'},
-                    {'id': 12, 'mediaType': 'movie'}, {'id': 90, 'mediaType': 'tv'}]})
-            return Response({'totalPages': 1, 'results': [{'id': 4, 'mediaType': 'tv'}]})
+            calls.append(request.full_url)
+            self.assertEqual(request.get_header('Authorization'), 'Bearer private-token')
+            self.assertIn('language=en-US', request.full_url)
+            if '/trending/movie/day?' in request.full_url:
+                if 'page=1' in request.full_url:
+                    return Response({'total_pages': 2, 'results': [{'id': 12}, {'id': 9}]})
+                return Response({'total_pages': 2, 'results': [{'id': 12}, {'id': 7}]})
+            if 'page=1' in request.full_url:
+                return Response({'total_pages': 1, 'results': [{'id': 4}]})
+            return Response({'total_pages': 1, 'results': []})
         with patch.object(feed.urllib.request, 'urlopen', side_effect=respond):
-            result = feed.fetch_feed({'url': 'http://seerr:5055', 'api_key': 'private-key', 'pages': 3})
-        self.assertEqual(result['movies'], ['12', '9'])
+            result = feed.fetch_feed({'tmdb_bearer_token': 'private-token', 'language': 'en-US', 'pages': 3})
+        self.assertEqual(result['movies'], ['12', '9', '7'])
         self.assertEqual(result['tv'], ['4'])
-        self.assertNotIn('private-key', json.dumps(result))
+        self.assertEqual(len(calls), 3)
+        self.assertNotIn('private-token', json.dumps(result))
+
+    def test_missing_tmdb_token_fails_without_requests(self):
+        with patch.object(feed.urllib.request, 'urlopen') as request:
+            with self.assertRaisesRegex(ValueError, 'TMDb bearer token is not configured'):
+                feed.fetch_feed({'pages': 2})
+        request.assert_not_called()
 
 if __name__ == '__main__':
     unittest.main()

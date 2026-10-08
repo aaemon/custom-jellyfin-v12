@@ -1,4 +1,4 @@
-"""Cache Seerr's daily trending IDs; no server credentials reach the browser."""
+"""Fetch TMDb daily trending IDs; credentials remain server-side."""
 import argparse
 import json
 import os
@@ -9,13 +9,18 @@ import urllib.request
 from trending_ready import prepare
 
 def fetch_feed(settings):
+    token = settings.get('tmdb_bearer_token')
+    if not token:
+        raise ValueError('TMDb bearer token is not configured')
+    language = settings.get('language', 'en-US')
     result = {'movies': [], 'tv': [], 'updatedAt': time.time(), 'timeWindow': 'day'}
     for media_type, key in (('movie', 'movies'), ('tv', 'tv')):
         seen = set()
         for page in range(1, int(settings.get('pages', 10)) + 1):
-            query = urllib.parse.urlencode({'mediaType': media_type, 'timeWindow': 'day', 'page': page})
-            request = urllib.request.Request(settings['url'].rstrip('/') + '/api/v1/discover/trending?' + query,
-                headers={'X-Api-Key': settings['api_key']})
+            query = urllib.parse.urlencode({'language': language, 'page': page})
+            request = urllib.request.Request(
+                'https://api.themoviedb.org/3/trending/' + media_type + '/day?' + query,
+                headers={'Authorization': 'Bearer ' + token, 'accept': 'application/json'})
             with urllib.request.urlopen(request, timeout=45) as response:
                 data = json.load(response)
             for item in data.get('results', []):
@@ -26,7 +31,7 @@ def fetch_feed(settings):
                 if identifier and identifier not in seen:
                     seen.add(identifier)
                     result[key].append(str(identifier))
-            if page >= data.get('totalPages', page) or not data.get('results'):
+            if page >= data.get('total_pages', page) or not data.get('results'):
                 break
     return result
 

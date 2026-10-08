@@ -30,17 +30,22 @@ can have their own selection and sorting behavior.
 
 ## Trending feed
 
-Mount a private directory at `/trending` containing `settings.json`:
+Mount a private directory at `/trending` containing `settings.json` with a
+TMDb v4 API Read Access Token:
 
 ```json
-{"url":"http://seerr:5055","api_key":"your-seerr-api-key","pages":10}
+{"tmdb_bearer_token":"your-tmdb-v4-read-token","language":"en-US","pages":10}
 ```
 
-The Seerr container must be reachable on the same Docker network, or use a reachable
-server-side URL. The Compose example mounts `/docker/jellyfin/trending`, configurable
-with `TRENDING_CONFIG_PATH`. Keep this directory private; never commit the real API key.
+The worker calls TMDb directly; no Seerr container or Seerr API key is required.
+The Compose example mounts `/docker/jellyfin/trending`, configurable with
+`TRENDING_CONFIG_PATH`. Keep this directory private; never commit the bearer token.
+The former Seerr settings format (`url`/`api_key`) is not used by the TMDb worker.
+After switching, replace `settings.json` with the TMDb format shown above.
+The repository includes `customizations/trending-settings.example.json` as a
+field reference. Never put a real token in Compose, Git, or the image.
 
-The image fetches movie and TV trending IDs from Seerr every six hours and retains the
+The image fetches movie and TV trending IDs from TMDb every six hours and retains the
 last good feed across restarts. It prepares one shared available movie/series list
 on the server, including deduplication and playable-episode checks. The selection
 uses Bijoy's common library access (or an enabled user's access on a new server).

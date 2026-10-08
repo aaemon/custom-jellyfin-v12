@@ -1,0 +1,5 @@
+{
+  "tmdb_bearer_token": "REPLACE_WITH_ROTATED_TMDB_V4_READ_TOKEN",
+  "language": "en-US",
+  "pages": 10
+}
