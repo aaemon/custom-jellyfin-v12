@@ -11,7 +11,17 @@ class ReadyTests(unittest.TestCase):
             {'Id':'b','Type':'Movie','ProviderIds':{'Tmdb':'10'}},
             {'Id':'c','Type':'Movie','ProviderIds':{'Tmdb':'20'}},
             {'Id':'v','Type':'Movie','ProviderIds':{'Tmdb':'30'},'IsVirtualItem':True}]
-        self.assertEqual(matching_ids(['20','30','10'],items,'Movie'), ['c','a','b'])
+        self.assertEqual(matching_ids(['20','30','10'],items,'Movie'), ['c','a'])
+
+    def test_popular_and_top_rated_fill_after_trending_and_deduplicate(self):
+        items = [
+            {'Id':'trend','Type':'Movie','ProviderIds':{'Tmdb':'1'}},
+            {'Id':'popular','Type':'Movie','ProviderIds':{'Tmdb':'2'}},
+            {'Id':'top','Type':'Movie','ProviderIds':{'Tmdb':'3'}},
+            {'Id':'duplicate-version','Type':'Movie','ProviderIds':{'Tmdb':'2'}},
+        ]
+        tiers = [['1','not-downloaded'], ['2','1'], ['3','2']]
+        self.assertEqual(matching_ids(tiers, items, 'Movie'), ['trend','popular','top'])
 
     def test_shared_selection_contains_ids_only_and_playable_tv(self):
         def request(route, params=None):

@@ -60,6 +60,18 @@
         }, []);
     }
 
+    function matchTiers(tiers, items, kind) {
+        var seen = new Set();
+        return (tiers || []).reduce(function (result, tier) {
+            return result.concat(match(tier, items, kind).filter(function (item) {
+                var id = tmdbId(item) || item.Id;
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+            }));
+        }, []);
+    }
+
     function inventory(api, userId, factory, cacheKey) {
         var cached = inventories.get(cacheKey);
         if (cached && cached.until > Date.now()) return cached.promise;
@@ -107,7 +119,10 @@
         var values = await Promise.all([
             feed(client), inventory(api, userId, deps.libraryApi, client.serverId() + ':' + userId)
         ]);
-        var matching = match(values[0][kind === 'Movie' ? 'movies' : 'tv'], values[1], kind);
+        var tiers = kind === 'Movie'
+            ? [values[0].movies, values[0].popularMovies, values[0].topRatedMovies]
+            : [values[0].tv, values[0].popularTv, values[0].topRatedTv];
+        var matching = matchTiers(tiers, values[1], kind);
         var selected = matching.slice(0, 16);
         if (kind === 'Series') {
             var playable = [];

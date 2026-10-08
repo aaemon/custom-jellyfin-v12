@@ -13,13 +13,22 @@ def fetch_feed(settings):
     if not token:
         raise ValueError('TMDb bearer token is not configured')
     language = settings.get('language', 'en-US')
-    result = {'movies': [], 'tv': [], 'updatedAt': time.time(), 'timeWindow': 'day'}
-    for media_type, key in (('movie', 'movies'), ('tv', 'tv')):
+    result = {'movies': [], 'tv': [], 'popularMovies': [], 'topRatedMovies': [],
+              'popularTv': [], 'topRatedTv': [], 'updatedAt': time.time(), 'timeWindow': 'day'}
+    feeds = [
+        ('movie', 'movies', 'trending/movie/day'),
+        ('movie', 'popularMovies', 'movie/popular'),
+        ('movie', 'topRatedMovies', 'movie/top_rated'),
+        ('tv', 'tv', 'trending/tv/day'),
+        ('tv', 'popularTv', 'tv/popular'),
+        ('tv', 'topRatedTv', 'tv/top_rated'),
+    ]
+    for media_type, key, endpoint in feeds:
         seen = set()
         for page in range(1, int(settings.get('pages', 10)) + 1):
             query = urllib.parse.urlencode({'language': language, 'page': page})
             request = urllib.request.Request(
-                'https://api.themoviedb.org/3/trending/' + media_type + '/day?' + query,
+                'https://api.themoviedb.org/3/' + endpoint + '?' + query,
                 headers={'Authorization': 'Bearer ' + token, 'accept': 'application/json'})
             with urllib.request.urlopen(request, timeout=45) as response:
                 data = json.load(response)

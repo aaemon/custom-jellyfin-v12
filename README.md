@@ -47,9 +47,13 @@ After switching, replace `settings.json` with the TMDb format shown above.
 The repository includes `customizations/trending-settings.example.json` as a
 field reference. Never put a real token in Compose, Git, or the image.
 
-The image fetches movie and TV trending IDs from TMDb every six hours and retains the
-last good feed across restarts. It prepares one shared available movie/series list
-on the server, including deduplication and playable-episode checks. The selection
+The image fetches daily Trending, Popular, and Top Rated movie/TV IDs directly
+from TMDb every six hours and retains the last good feed across restarts. It fills
+one shared available list in strict order: Trending first, then Popular, then Top
+Rated until each row has up to 16 downloaded titles. The fallback lists are only
+used to fill slots left by downloaded matches from higher-priority lists. Titles
+are deduplicated across lists and library versions. It prepares one
+shared available movie/series list on the server, including playable-episode checks. The selection
 uses Bijoy's common library access (or an enabled user's access on a new server).
 The shared ready file contains only opaque item IDs and a timestamp, not media
 names, paths, user data, or credentials. A short-lived preparation key is removed

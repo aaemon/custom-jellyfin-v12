@@ -8,6 +8,7 @@ import urllib.request
 
 def matching_ids(feed, inventory, kind):
     index = {}
+    id_to_tmdb = {}
     for item in inventory:
         if item.get('Type') != kind or item.get('IsVirtualItem') or item.get('LocationType') in ('Virtual', 'Remote'):
             continue
@@ -15,7 +16,17 @@ def matching_ids(feed, inventory, kind):
                            if name.lower() == 'tmdb'), None)
         if identifier:
             index.setdefault(identifier, []).append(item['Id'])
-    return list(dict.fromkeys(item_id for identifier in feed for item_id in index.get(str(identifier), [])))
+            id_to_tmdb[item['Id']] = identifier
+    tiers = feed if feed and isinstance(feed[0], list) else [feed]
+    selected, seen = [], set()
+    for tier in tiers:
+        for identifier in tier:
+            for item_id in index.get(str(identifier), []):
+                tmdb = id_to_tmdb.get(item_id, str(identifier))
+                if tmdb not in seen:
+                    seen.add(tmdb)
+                    selected.append(item_id)
+    return selected
 
 def select_ready(request, user_id, movies, series, updated_at):
     visible = []
@@ -76,8 +87,10 @@ def prepare(feed, base='http://127.0.0.1:8096', database='/config/data/jellyfin.
             if len(items) < 2000:
                 break
             start += len(items)
-        result = select_ready(request, user['Id'], matching_ids(feed['movies'], inventory, 'Movie'),
-                              matching_ids(feed['tv'], inventory, 'Series'), feed['updatedAt'])
+        movie_tiers = [feed.get('movies', []), feed.get('popularMovies', []), feed.get('topRatedMovies', [])]
+        tv_tiers = [feed.get('tv', []), feed.get('popularTv', []), feed.get('topRatedTv', [])]
+        result = select_ready(request, user['Id'], matching_ids(movie_tiers, inventory, 'Movie'),
+                              matching_ids(tv_tiers, inventory, 'Series'), feed['updatedAt'])
         print('[trending] Prepared shared list: ' + str(len(result['movies'])) + ' movies, '
               + str(len(result['tv'])) + ' TV series.', flush=True)
         return result
