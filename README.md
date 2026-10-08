@@ -59,8 +59,9 @@ Those authenticated card requests enforce the user's current access permissions.
 This shared-list mode is intended for this deployment's common library access.
 Before a new server's first preparation completes, the lightweight matching
 fallback remains available. No Seerr credentials are sent to the browser.
-When fewer than 16 titles match, fewer are shown. Titles appear immediately with
-a loading/empty/error status; the native loader only hides an empty card body.
+When fewer than 16 titles match, fewer are shown. The entire row stays blank
+until cards are ready. Scrollers use the same Jellyfin markup and native arrow
+controls as the other horizontal home rows.
 The fallback local index excludes artwork and user-data calculations, full card
 details are fetched only for selected IDs, and fallback TV checks run in parallel.
 Existing home sections remain usable if the feed service is unavailable.

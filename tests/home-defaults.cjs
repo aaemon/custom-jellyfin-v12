@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const web = process.env.WEB_ROOT || '/jellyfin/jellyfin-web';
-const contents = fs.readFileSync(path.join(web, '65126.bijoytrendingv3.chunk.js'), 'utf8');
+const contents = fs.readFileSync(path.join(web, '65126.bijoytrendingv4.chunk.js'), 'utf8');
 const start = contents.indexOf('function(e,t,r,n,i){var a=i.enableOverflow;return function()');
 const end = contents.indexOf('}}(t,r,n.Id,n.CollectionType,a)', start);
 assert.ok(start >= 0 && end > start);

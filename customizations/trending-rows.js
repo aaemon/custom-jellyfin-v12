@@ -140,31 +140,26 @@
         [ ['Movie', 'Trending Movies'], ['Series', 'Trending TV Shows'] ]
             .forEach(function (entry) {
                 var section = document.createElement('div');
-                section.classList.add('verticalSection');
+                section.classList.add('verticalSection', 'hide');
                 section.setAttribute('data-bijoy-trending', entry[0]);
-                section.innerHTML = '<div class="sectionTitleContainer sectionTitleContainer-cards padded-left">'
-                    + '<h2 class="sectionTitle sectionTitle-cards">' + entry[1] + '</h2></div>'
-                    + '<div class="bijoyTrendingStatus padded-left padded-right" role="status">Loading trending titles…</div>'
-                    + '<div class="bijoyTrendingContent">'
-                    + (options.enableOverflow ? '<div is="emby-scroller" class="padded-top-focusscale padded-bottom-focusscale" data-centerfocus="true">' : '')
-                    + '<div is="emby-itemscontainer" class="itemsContainer '
-                    + (options.enableOverflow ? 'scrollSlider focuscontainer-x' : 'focuscontainer-x padded-left padded-right vertical-wrap')
-                    + '"></div>' + (options.enableOverflow ? '</div>' : '') + '</div>';
+                var html = '<div class="sectionTitleContainer sectionTitleContainer-cards padded-left">'
+                    + '<h2 class="sectionTitle sectionTitle-cards">' + entry[1] + '</h2></div>';
+                if (options.enableOverflow) {
+                    html += '<div is="emby-scroller" class="padded-top-focusscale padded-bottom-focusscale" data-centerfocus="true">';
+                    html += '<div is="emby-itemscontainer" class="itemsContainer scrollSlider focuscontainer-x">';
+                    html += '</div></div>';
+                } else {
+                    html += '<div is="emby-itemscontainer" class="itemsContainer focuscontainer-x padded-left padded-right vertical-wrap">';
+                    html += '</div>';
+                }
+                section.innerHTML = html;
                 host.appendChild(section);
                 var container = section.querySelector('.itemsContainer');
-                var status = section.querySelector('.bijoyTrendingStatus');
                 container.fetchData = function () {
-                    status.textContent = 'Loading trending titles…';
-                    status.hidden = false;
-                    return select(api, client, user, entry[0], deps).then(function (items) {
-                        status.hidden = items.length > 0;
-                        if (!items.length) status.textContent = 'No downloaded trending titles available right now.';
-                        return items;
-                    }).catch(function () {
+                    return select(api, client, user, entry[0], deps).catch(function () {
                         // A feed outage must not reject Jellyfin's combined home
                         // section loader or prevent the existing rows loading.
                         console.warn('[trending] Row unavailable; keeping other home sections active.');
-                        status.textContent = 'Trending is temporarily unavailable. Refresh to retry.';
                         return [];
                     });
                 };
@@ -175,9 +170,9 @@
                         centerText: true, overlayPlayButton: true, allowBottomPadding: !options.enableOverflow,
                         cardLayout: false, showTitle: true, showYear: true, lines: 2 });
                 };
-                // Jellyfin may hide an empty/loading items parent. Keep that
-                // behavior confined to the body, not the row title/status.
-                container.parentContainer = section.querySelector('.bijoyTrendingContent');
+                // Match Jellyfin's native home-row scroller parent so the
+                // native carousel arrows/focus behavior remain identical.
+                container.parentContainer = section;
             });
     }
 

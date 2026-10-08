@@ -24,8 +24,6 @@ const document = { createElement: () => ({
     classList: { names: [], add(...names) { this.names.push(...names); } },
     setAttribute(name, value) { this[name] = value; },
     querySelector(selector) {
-        if (selector === '.bijoyTrendingStatus') return this.status || (this.status = {});
-        if (selector === '.bijoyTrendingContent') return this.content || (this.content = {});
         return this.container || (this.container = {});
     }
 }) };
@@ -67,8 +65,11 @@ const host = { children: [], closest() { return this; },
     assert.equal(host.children.length, 2);
     assert.ok(host.children[0].innerHTML.includes('Trending Movies'));
     assert.ok(host.children[1].innerHTML.includes('Trending TV Shows'));
-    assert.ok(host.children.every(section => !section.classList.names.includes('hide')),
-        'Titles must be visible immediately, before network requests finish');
+    assert.ok(host.children.every(section => section.innerHTML.includes('is="emby-scroller"')
+        && section.innerHTML.includes('class="itemsContainer scrollSlider focuscontainer-x"')),
+    'Trending carousel must use Jellyfin native scroller markup');
+    assert.ok(host.children.every(section => section.classList.names.includes('hide')),
+        'The complete row must remain blank during loading');
     window.BijoyTrendingRows.install(host, client, { Id: 'user' }, { enableOverflow: true }, deps);
     assert.equal(host.children.length, 2, 'Rows must not be duplicated');
     const [movieResult, tvResult] = await Promise.all(host.children.map(node => node.container.fetchData()));
@@ -92,8 +93,8 @@ const host = { children: [], closest() { return this; },
     assert.equal(cards.context, 'home');
     assert.equal(cards.shape, 'PortraitOverflow');
     assert.equal(cards.items.length, 16);
-    assert.equal(host.children[0].container.parentContainer, host.children[0].content,
-        'Native loading/empty-state hiding must not hide the title');
+    assert.equal(host.children[0].container.parentContainer, host.children[0],
+        'Row uses Jellyfin native parent container for visibility and controls');
     const otherUser = await window.BijoyTrendingRows.select({}, client, { Id: 'other' }, 'Movie', deps);
     assert.equal(otherUser.length, 16);
     assert.ok(requests.some(request => request.userId === 'other'));
@@ -123,8 +124,9 @@ const host = { children: [], closest() { return this; },
     window.BijoyTrendingRows.install(failureHost, failureClient, { Id: 'user' }, { enableOverflow: true }, deps);
     const failureResults = await Promise.all(failureHost.children.map(node => node.container.fetchData()));
     assert.ok(failureResults.every(items => items.length === 0), 'Feed errors must not reject the combined home loader');
-    assert.ok(failureHost.children.every(section => section.status.textContent.includes('temporarily unavailable')));
-    const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv3.chunk.js'), 'utf8');
+    assert.ok(failureHost.children.every(section => section.classList.names.includes('hide')),
+        'Entire row remains blank when the feed fails');
+    const chunk = fs.readFileSync(path.join(web, '65126.bijoytrendingv4.chunk.js'), 'utf8');
     assert.ok(chunk.includes('bijoyTrendingDependencies={libraryApi:bijoyLibraryApi,cards:p.Ay,portraitShape:I.xK,connections:l.A,queryClient:u.q}'));
     assert.ok(chunk.includes('window.BijoyTrendingRows.prefetch(t,r,bijoyTrendingDependencies);return u.q.fetchQuery'));
     assert.ok(chunk.includes('case n.LatestMedia:window.BijoyTrendingRows.install(v,t,r,h,bijoyTrendingDependencies),!function'));
