@@ -10,6 +10,8 @@ Included customizations:
 - The overflow menu is labelled `Libraries`.
 - Library backdrops are enabled by default.
 - The public login toolbar and signed-in drawer use `Bijoy Media` as the fallback server name.
+- The shared `Bijoy` account has Jellyfin user-preference access disabled at startup,
+  preventing profile-image, password, and user-configuration changes.
 - Library pages use progressive (infinite) scrolling: more items load automatically as you
   reach the bottom of the page instead of stopping at a single page.
 - The page-size preference is capped at 400, including an unlimited setting. This
@@ -116,9 +118,18 @@ when replacing an instance to retain its server identity. Jellyfin's generated
 login background is served natively from `/Branding/Splashscreen` and stored in
 `data/splashscreen.png`; it is not baked into the image.
 
+On each start, the image sets the shared `Bijoy` user's Jellyfin
+`EnableUserPreferenceAccess` setting to false. This prevents profile-image,
+password, and user-configuration changes through Jellyfin's guarded APIs. NPM
+also blocks display-preference writes for requests through the proxy. Treat
+direct port 8096 as administrator-only; nginx restrictions do not apply there.
+
 NPM's proxy-host definitions and API restrictions stay in `/docker/npm/data`.
 The Compose example reuses that directory; a new NPM installation needs its
 proxy host configured separately.
+NPM blocks display-preference and settings writes for all proxied users. Direct
+port 8096 is the administrator path and bypasses NPM's nginx rules; the Bijoy
+user's Jellyfin preference permission is still enforced directly by Jellyfin.
 
 ## Publishing and future Jellyfin releases
 
