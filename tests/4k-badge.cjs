@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
 function card(id, type) {
@@ -30,7 +31,8 @@ const context = {
         return { ok: true, json: async () => ({ fourkMovies: fetchCount === 1 ? [] : ['movie-4k'] }) };
     }
 };
-vm.runInNewContext(fs.readFileSync(process.env.BADGE_JS || '/opt/bijoy/4k-badge.js', 'utf8'), context);
+const badgePath = process.env.BADGE_JS || path.join(process.env.HELPER_ROOT || '/opt/bijoy', '4k-badge.js');
+vm.runInNewContext(fs.readFileSync(badgePath, 'utf8'), context);
 
 (async () => {
     await new Promise(resolve => setTimeout(resolve, 0));
