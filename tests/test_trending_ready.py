@@ -3,7 +3,7 @@ import sys
 import unittest
 
 sys.path.insert(0, os.environ.get('HELPER_ROOT', '/opt/bijoy'))
-from trending_ready import matching_ids, select_ready
+from trending_ready import four_k_movie_ids, matching_ids, select_ready
 
 class ReadyTests(unittest.TestCase):
     def test_duplicates_and_virtual_items(self):
@@ -22,6 +22,19 @@ class ReadyTests(unittest.TestCase):
         ]
         tiers = [['1','not-downloaded'], ['2','1'], ['3','2']]
         self.assertEqual(matching_ids(tiers, items, 'Movie'), ['trend','popular','top'])
+
+    def test_4k_index_uses_jellyfins_is4k_query(self):
+        calls = []
+        def request(route, params):
+            calls.append((route, params))
+            if params['startIndex'] == 0:
+                return {'Items': [{'Id':'4k-1'}, {'Id':'4k-2'}]}
+            return {'Items': []}
+        self.assertEqual(four_k_movie_ids(request, 'bijoy'), ['4k-1','4k-2'])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][0], '/Items')
+        self.assertEqual(calls[0][1]['is4K'], 'true')
+        self.assertEqual(calls[0][1]['includeItemTypes'], 'Movie')
 
     def test_shared_selection_contains_ids_only_and_playable_tv(self):
         def request(route, params=None):

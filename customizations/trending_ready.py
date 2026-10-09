@@ -28,6 +28,19 @@ def matching_ids(feed, inventory, kind):
                     selected.append(item_id)
     return selected
 
+def four_k_movie_ids(request, user_id):
+    result, start = [], 0
+    while True:
+        items = request('/Items', {'userId': user_id, 'recursive': 'true',
+            'includeItemTypes': 'Movie', 'is4K': 'true',
+            'excludeLocationTypes': 'Virtual,Remote', 'fields': 'MediaSourceCount',
+            'enableImages': 'false', 'enableUserData': 'false', 'startIndex': start,
+            'limit': 2000, 'enableTotalRecordCount': 'false'}).get('Items', [])
+        result.extend(item['Id'] for item in items if item.get('Id'))
+        if len(items) < 2000:
+            return list(dict.fromkeys(result))
+        start += len(items)
+
 def select_ready(request, user_id, movies, series, updated_at):
     visible = []
     identifiers = movies + series
@@ -91,8 +104,10 @@ def prepare(feed, base='http://127.0.0.1:8096', database='/config/data/jellyfin.
         tv_tiers = [feed.get('tv', []), feed.get('popularTv', []), feed.get('topRatedTv', [])]
         result = select_ready(request, user['Id'], matching_ids(movie_tiers, inventory, 'Movie'),
                               matching_ids(tv_tiers, inventory, 'Series'), feed['updatedAt'])
+        result['fourkMovies'] = four_k_movie_ids(request, user['Id'])
         print('[trending] Prepared shared list: ' + str(len(result['movies'])) + ' movies, '
-              + str(len(result['tv'])) + ' TV series.', flush=True)
+              + str(len(result['tv'])) + ' TV series, ' + str(len(result['fourkMovies']))
+              + ' 4K movies.', flush=True)
         return result
     finally:
         with sqlite3.connect(database, timeout=30) as db:

@@ -20,6 +20,7 @@ Included customizations:
 - Movie detail pages and automatic web playback prefer an available, playable 1080p
   source. Explicit 2160p/720p selections still take priority.
 - Movie versions show the full filename suffix, e.g. `Bluray-1080p` instead of `1080p`.
+- Movie posters show a `4K` badge instead of the alternate-version count when a 4K version exists.
 - Home-page library rows use Jellyfin's default Recently Added queries and headings.
 - Played items are shown in Recently Added by default. Existing users are migrated once;
   new users inherit this default. Users may still change their own preference.

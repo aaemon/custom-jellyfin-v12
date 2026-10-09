@@ -110,10 +110,12 @@ jobs:
               node --check /workspace/.image-web/runtime.bundle.js
               node --check /workspace/.image-web/itemDetails.bijoy1080v2.chunk.js
               node --check /workspace/.image-web/65126.bijoytrendingv4.chunk.js
+              node --check /workspace/.image-web/4k-badge.js
               node /workspace/tests/movie-versions.cjs
               node /workspace/tests/home-defaults.cjs
               node /workspace/tests/branding.cjs
               node /workspace/tests/trending.cjs
+              node /workspace/tests/4k-badge.cjs
             '
 
       - uses: docker/setup-qemu-action@v4

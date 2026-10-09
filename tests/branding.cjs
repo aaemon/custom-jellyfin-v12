@@ -18,6 +18,7 @@ assert.ok(index.includes('<title>Bijoy Media</title>'));
 assert.ok(index.includes('bijoy-favicon-v1.ico'));
 assert.ok(index.includes('jellyfin-infinite-scroll.js?bijoy-'));
 assert.ok(index.indexOf('trending-rows-v1.js') < index.indexOf('runtime.bundle.js'));
+assert.ok(index.indexOf('4k-badge.js?bijoy-') < index.indexOf('runtime.bundle.js'));
 assert.ok(!index.includes('home-release-order'));
 const assets = [...index.matchAll(/(?:src|href)="([^"?]+\.(?:js|css))\?bijoy-([a-f0-9]{16})"/g)];
 assert.ok(assets.length > 10);
