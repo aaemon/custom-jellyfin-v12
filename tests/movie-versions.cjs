@@ -25,7 +25,7 @@ const start = main.indexOf('function(e,t,n,bijoySourceId){var r=n.map');
 const end = main.indexOf('}(t,r,a.MediaSources,i).then', start);
 assert.ok(start >= 0 && end > start);
 const selector = vm.runInNewContext('(' + main.slice(start, end + 1) + ')', {
-    window, tt: async (_client, _item, s) => s.testPlayable
+    window, et: async (_client, _item, s) => s.testPlayable
 });
 (async () => {
     assert.equal((await selector(null, { Type: 'Movie', Id: '2160p' }, sources)).Id, '1080p');

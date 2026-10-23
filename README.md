@@ -89,12 +89,12 @@ ghcr.io/aaemon/custom-jellyfin-v12:latest
 
 Published manifests support `linux/amd64` and `linux/arm64`.
 
-Pin a version in production. For Jellyfin v12.2:
+Pin a version in production. For Jellyfin v12.3:
 
 ```yaml
 services:
   jellyfin:
-    image: ghcr.io/aaemon/custom-jellyfin-v12:12.2
+    image: ghcr.io/aaemon/custom-jellyfin-v12:12.3
 ```
 
 ## Local build
@@ -146,8 +146,9 @@ new versions automatically. Images support amd64 and arm64 and carry the Git
 commit in `org.opencontainers.image.revision`.
 
 Build-time scripts under `customizations/` verify the expected upstream bundle
-patterns. CI also checks JavaScript syntax and executes tests against the
-patched playback selector and home-row query before publishing. When an
+patterns. CI also checks every web JavaScript file's syntax and tests navigation,
+infinite scrolling, playback selection, branding, home rows, badges, and startup
+policies before publishing. When an
 upstream release changes those patterns, update the affected patch script and
 tests; mismatches fail the build instead of publishing partially patched assets.
 

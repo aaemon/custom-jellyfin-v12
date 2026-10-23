@@ -28,8 +28,8 @@ my $detail = read_file($detail_path);
 my $runtime_path = "$web/runtime.bundle.js";
 my $runtime = read_file($runtime_path);
 if (index($main, 'bijoySourceId') < 0) {
-    replace_once(\$main, 'return nt(0,a)?function(e,t,n){var r=n.map',
-        'return nt(0,a)?function(e,t,n,bijoySourceId){var r=n.map');
+    replace_once(\$main, 'return tt(0,a)?function(e,t,n){var r=n.map',
+        'return tt(0,a)?function(e,t,n,bijoySourceId){var r=n.map');
     replace_once(\$main, '}(t,r,a.MediaSources).then',
         '}(t,r,a.MediaSources,i).then');
     replace_once(\$main, 'var o=n.find((function(e){return e.Id===t.Id}));',

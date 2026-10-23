@@ -1,7 +1,7 @@
 name: bijoy-media
 services:
   jellyfin:
-    image: ${JELLYFIN_IMAGE:-ghcr.io/aaemon/custom-jellyfin-v12:12.2}
+    image: ${JELLYFIN_IMAGE:-ghcr.io/aaemon/custom-jellyfin-v12:12.3}
     container_name: jellyfin
     hostname: bijoy-media
     environment:

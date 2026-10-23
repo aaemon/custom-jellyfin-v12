@@ -1,7 +1,7 @@
-ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:12.2
+ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:12.3
 FROM ${JELLYFIN_BASE_IMAGE}
 
-ARG JELLYFIN_VERSION=12.2
+ARG JELLYFIN_VERSION=12.3
 ARG JELLYFIN_BASE_IMAGE
 ARG CUSTOM_REVISION=local
 LABEL org.opencontainers.image.source="https://github.com/aaemon/custom-jellyfin-v12"
@@ -85,8 +85,8 @@ RUN set -eu; \
     old_hash=${old_hash%.chunk.js}; \
     new_hash=customnavbarbijoy2; \
     new_name="${chunk_id}.${new_hash}.chunk.js"; \
-    old_nav='N=(0,a.useMemo)((function(){return j.length>b+1?j.slice(0,b):j}),[b,j]),R=(0,a.useMemo)((function(){return j.slice((null==N?void 0:N.length)||0)}),[N,j])'; \
-    new_nav='N=(0,a.useMemo)((function(){return f||[]}),[f]),R=(0,a.useMemo)((function(){return(null==x?void 0:x.Items)||[]}),[x])'; \
+    old_nav='F=(0,a.useMemo)((function(){return j.length>b+1?j.slice(0,b):j}),[b,j]),R=(0,a.useMemo)((function(){return j.slice((null==F?void 0:F.length)||0)}),[F,j])'; \
+    new_nav='F=(0,a.useMemo)((function(){return f||[]}),[f]),R=(0,a.useMemo)((function(){return(null==x?void 0:x.Items)||[]}),[x])'; \
     test "$(grep -oF "$old_nav" "$navbar_bundle" | wc -l)" -eq 1; \
     OLD="$old_nav" NEW="$new_nav" perl -0pi -e 's/\Q$ENV{OLD}\E/$ENV{NEW}/' "$navbar_bundle"; \
     test "$(grep -oF "$old_nav" "$navbar_bundle" | wc -l)" -eq 0; \
