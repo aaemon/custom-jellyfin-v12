@@ -1,7 +1,7 @@
-ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:12.3
+ARG JELLYFIN_BASE_IMAGE=ghcr.io/aaemon/loginfix-jellyfin-v12:12.4
 FROM ${JELLYFIN_BASE_IMAGE}
 
-ARG JELLYFIN_VERSION=12.3
+ARG JELLYFIN_VERSION=12.4
 ARG JELLYFIN_BASE_IMAGE
 ARG CUSTOM_REVISION=local
 LABEL org.opencontainers.image.source="https://github.com/aaemon/custom-jellyfin-v12"

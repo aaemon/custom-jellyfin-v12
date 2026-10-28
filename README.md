@@ -89,12 +89,12 @@ ghcr.io/aaemon/custom-jellyfin-v12:latest
 
 Published manifests support `linux/amd64` and `linux/arm64`.
 
-Pin a version in production. For Jellyfin v12.3:
+Pin a version in production. For Jellyfin v12.4:
 
 ```yaml
 services:
   jellyfin:
-    image: ghcr.io/aaemon/custom-jellyfin-v12:12.3
+    image: ghcr.io/aaemon/custom-jellyfin-v12:12.4
 ```
 
 ## Local build
